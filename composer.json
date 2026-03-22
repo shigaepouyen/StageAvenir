@@ -1,0 +1,14 @@
+{
+  "name": "goodays/avenir-pro",
+  "description": "Application web de gestion des stages d'observation 3e.",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "flightphp/core": "^3.18"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  }
+}
