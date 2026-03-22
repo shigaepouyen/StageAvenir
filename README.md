@@ -1,7 +1,7 @@
 # Avenir Pro
 
 ## Description
-Base initiale de l'application web Avenir Pro en PHP 8.2 avec MariaDB et FlightPHP, compatible avec un hebergement OVH mutualise.
+Base initiale de l'application web Avenir Pro en PHP 8.1+ avec MariaDB et FlightPHP, compatible avec un hebergement OVH mutualise.
 
 ## Structure
 - `index.php` : point d'entree de l'application.

@@ -3,7 +3,7 @@
   "description": "Application web de gestion des stages d'observation 3e.",
   "type": "project",
   "require": {
-    "php": "^8.2",
+    "php": "^8.1",
     "flightphp/core": "^3.18"
   },
   "autoload": {

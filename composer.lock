@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d9e691998cdd3871960e0357c23eff40",
+    "content-hash": "ef7020d737ab40238dfc908435b2ba72",
     "packages": [
         {
             "name": "flightphp/core",
@@ -89,7 +89,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.2"
+        "php": "^8.1"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
