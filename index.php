@@ -2,6 +2,24 @@
 
 declare(strict_types=1);
 
+set_exception_handler(static function (\Throwable $exception): void {
+    error_log(sprintf(
+        '[AvenirPro] %s in %s:%d | trace=%s',
+        $exception->getMessage(),
+        $exception->getFile(),
+        $exception->getLine(),
+        str_replace(["\r", "\n"], ' ', $exception->getTraceAsString())
+    ));
+
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+    }
+
+    echo "Erreur interne Avenir Pro. Consultez les logs OVH.";
+    exit;
+});
+
 use App\Controllers\AuthController;
 use App\Controllers\CompanyController;
 use App\Controllers\HomeController;
