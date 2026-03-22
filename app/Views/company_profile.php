@@ -33,7 +33,7 @@ $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
         <?php if (empty($accessDenied)): ?>
             <section>
                 <h2>Recherche Sirene</h2>
-                <form method="post" action="/company-profile/search">
+                <form method="post" action="<?= htmlspecialchars(app_path('/company-profile/search'), ENT_QUOTES, 'UTF-8'); ?>">
                     <input
                         type="hidden"
                         name="csrf_token"
@@ -60,7 +60,7 @@ $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
                             <p>SIRET : <?= htmlspecialchars((string) ($result['siret'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
                             <p>Adresse : <?= htmlspecialchars((string) ($result['address'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
                             <p>Code NAF : <?= htmlspecialchars((string) ($result['naf_code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
-                            <form method="post" action="/company-profile/select">
+                            <form method="post" action="<?= htmlspecialchars(app_path('/company-profile/select'), ENT_QUOTES, 'UTF-8'); ?>">
                                 <input
                                     type="hidden"
                                     name="csrf_token"
@@ -77,7 +77,7 @@ $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
 
             <section>
                 <h2>Profil entreprise</h2>
-            <form method="post" action="/company-profile">
+            <form method="post" action="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">
                 <input
                     type="hidden"
                     name="csrf_token"
@@ -142,7 +142,7 @@ $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
             </section>
         <?php endif; ?>
 
-        <p><a href="/">Retour a l'accueil</a></p>
+        <p><a href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Retour a l'accueil</a></p>
     </main>
 </body>
 </html>

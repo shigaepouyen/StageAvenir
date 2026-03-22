@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Repositories\AuthTokenRepository;
+use App\Repositories\MagicLinkRequestRepository;
 use App\Repositories\UserRepository;
 use App\Support\MagicLinkMailer;
 use App\Support\SessionManager;
@@ -14,6 +15,7 @@ final class AuthController
 {
     private UserRepository $users;
     private AuthTokenRepository $tokens;
+    private MagicLinkRequestRepository $requestLog;
     private MagicLinkMailer $mailer;
     private array $config;
 
@@ -21,6 +23,7 @@ final class AuthController
     {
         $this->users = new UserRepository($pdo);
         $this->tokens = new AuthTokenRepository($pdo);
+        $this->requestLog = new MagicLinkRequestRepository($pdo);
         $this->mailer = new MagicLinkMailer(
             $config['mail'],
             $config['app_url'],
@@ -35,9 +38,14 @@ final class AuthController
         $status = $_GET['status'] ?? null;
         $error = null;
         $success = null;
+        $returnTo = $this->normalizeReturnTo($_GET['return_to'] ?? '/');
 
         if ($status === 'sent') {
             $success = "Si l'email est valide, un lien de connexion a ete envoye.";
+        }
+
+        if ($status === 'logged_out') {
+            $success = 'Vous avez bien ete deconnecte.';
         }
 
         require __DIR__ . '/../Views/login.php';
@@ -49,6 +57,7 @@ final class AuthController
         $error = null;
         $success = null;
         $email = trim((string) ($_POST['email'] ?? ''));
+        $returnTo = $this->normalizeReturnTo($_POST['return_to'] ?? '/');
 
         if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             $error = "Veuillez saisir une adresse email valide.";
@@ -57,6 +66,20 @@ final class AuthController
         }
 
         $email = strtolower($email);
+        $magicLinkConfig = $this->config['magic_link'];
+        $clientIp = $this->detectClientIp();
+
+        $this->requestLog->deleteOlderThanHours((int) $magicLinkConfig['rate_limit_log_retention_hours']);
+
+        if (
+            $this->requestLog->countRecentByEmail($email, (int) $magicLinkConfig['rate_limit_window_minutes']) >= (int) $magicLinkConfig['rate_limit_max_per_email']
+            || $this->requestLog->countRecentByIp($clientIp, (int) $magicLinkConfig['rate_limit_window_minutes']) >= (int) $magicLinkConfig['rate_limit_max_per_ip']
+        ) {
+            http_response_code(429);
+            $error = "Trop de demandes de connexion ont ete envoyees. Reessayez dans quelques minutes.";
+            require __DIR__ . '/../Views/login.php';
+            return;
+        }
 
         $user = $this->users->findByEmail($email);
 
@@ -78,6 +101,8 @@ final class AuthController
             return;
         }
 
+        $this->requestLog->create($email, $clientIp);
+
         $selector = bin2hex(random_bytes(12));
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
@@ -89,7 +114,7 @@ final class AuthController
         $this->tokens->deleteByUserId((int) $user['id']);
         $tokenId = $this->tokens->create($selector, $hashedValidator, (int) $user['id'], $expiresAt);
 
-        $sent = $this->mailer->sendMagicLink((string) $user['email'], $selector, $validator);
+        $sent = $this->mailer->sendMagicLink((string) $user['email'], $selector, $validator, $returnTo);
 
         if (!$sent) {
             $this->tokens->deleteById($tokenId);
@@ -99,8 +124,10 @@ final class AuthController
             return;
         }
 
-        header('Location: ' . $this->config['app_url'] . '/login?status=sent', true, 302);
-        exit;
+        app_redirect('/login?' . http_build_query([
+            'status' => 'sent',
+            'return_to' => $returnTo,
+        ]));
     }
 
     public function consumeMagicLink(): void
@@ -110,6 +137,7 @@ final class AuthController
         $success = null;
         $selector = trim((string) ($_GET['selector'] ?? ''));
         $validator = trim((string) ($_GET['token'] ?? ''));
+        $returnTo = $this->normalizeReturnTo($_GET['return_to'] ?? '/');
 
         if ($selector === '' || $validator === '') {
             http_response_code(400);
@@ -153,7 +181,60 @@ final class AuthController
             'role' => (string) $tokenRow['role'],
         ]);
 
-        $success = 'Connexion reussie. Votre session est active pour 30 jours.';
-        require __DIR__ . '/../Views/login.php';
+        app_redirect($returnTo);
+    }
+
+    public function logout(): void
+    {
+        SessionManager::logout();
+        app_redirect('/login?status=logged_out');
+    }
+
+    private function detectClientIp(): string
+    {
+        $forwardedFor = trim((string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''));
+
+        if ($forwardedFor !== '') {
+            $parts = explode(',', $forwardedFor);
+            $candidate = trim($parts[0]);
+
+            if (filter_var($candidate, FILTER_VALIDATE_IP) !== false) {
+                return $candidate;
+            }
+        }
+
+        $remoteAddr = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+
+        if ($remoteAddr !== '' && filter_var($remoteAddr, FILTER_VALIDATE_IP) !== false) {
+            return $remoteAddr;
+        }
+
+        return '0.0.0.0';
+    }
+
+    private function normalizeReturnTo(mixed $value): string
+    {
+        $returnTo = trim((string) $value);
+
+        if ($returnTo === '' || str_contains($returnTo, "\n") || str_contains($returnTo, "\r")) {
+            return '/';
+        }
+
+        if (preg_match('#^https?://#i', $returnTo) === 1 || str_starts_with($returnTo, '//')) {
+            return '/';
+        }
+
+        if (!str_starts_with($returnTo, '/')) {
+            return '/';
+        }
+
+        $basePath = app_base_path();
+
+        if ($basePath !== '' && ($returnTo === $basePath || str_starts_with($returnTo, $basePath . '/'))) {
+            $returnTo = substr($returnTo, strlen($basePath));
+            $returnTo = $returnTo === '' ? '/' : $returnTo;
+        }
+
+        return str_starts_with($returnTo, '/') ? $returnTo : '/';
     }
 }

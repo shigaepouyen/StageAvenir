@@ -42,4 +42,36 @@ final class UserRepository
 
         return (int) $this->pdo->lastInsertId();
     }
+
+    public function countStudentsWithoutApplications(): int
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) AS total
+             FROM users
+             LEFT JOIN applications ON applications.student_id = users.id
+             WHERE users.role = :role
+               AND applications.id IS NULL'
+        );
+        $statement->execute(['role' => 'student']);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function findStudentsWithoutApplications(int $limit = 50): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT users.id, users.email, users.created_at
+             FROM users
+             LEFT JOIN applications ON applications.student_id = users.id
+             WHERE users.role = :role
+               AND applications.id IS NULL
+             ORDER BY users.created_at DESC
+             LIMIT :limit'
+        );
+        $statement->bindValue(':role', 'student', PDO::PARAM_STR);
+        $statement->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
 }

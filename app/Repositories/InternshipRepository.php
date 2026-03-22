@@ -32,7 +32,7 @@ final class InternshipRepository
              FROM internships
              INNER JOIN companies ON companies.id = internships.company_id
              INNER JOIN users ON users.id = companies.user_id
-             WHERE id = :id
+             WHERE internships.id = :id
              LIMIT 1'
         );
         $statement->execute(['id' => $id]);
@@ -221,5 +221,63 @@ final class InternshipRepository
             'status' => $status,
             'academic_year' => $academicYear,
         ]);
+    }
+
+    public function updateStatusById(int $id, string $status): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE internships
+             SET status = :status
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'id' => $id,
+            'status' => $status,
+        ]);
+    }
+
+    public function findOpenOffersOverview(?int $companyId = null, ?int $internshipId = null): array
+    {
+        $conditions = ['internships.status <> :archived_status'];
+        $params = ['archived_status' => 'archived'];
+
+        if ($companyId !== null) {
+            $conditions[] = 'companies.id = :company_id';
+            $params['company_id'] = $companyId;
+        }
+
+        if ($internshipId !== null) {
+            $conditions[] = 'internships.id = :internship_id';
+            $params['internship_id'] = $internshipId;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT
+                internships.id,
+                internships.title,
+                internships.status,
+                internships.places_count,
+                internships.academic_year,
+                COALESCE(NULLIF(companies.name, \'\'), companies.siret) AS company_label,
+                COUNT(applications.id) AS total_applications,
+                SUM(CASE WHEN applications.status = \'new\' THEN 1 ELSE 0 END) AS new_applications,
+                SUM(CASE WHEN applications.status = \'accepted\' THEN 1 ELSE 0 END) AS accepted_applications
+             FROM internships
+             INNER JOIN companies ON companies.id = internships.company_id
+             LEFT JOIN applications ON applications.internship_id = internships.id
+             WHERE ' . implode(' AND ', $conditions) . '
+             GROUP BY
+                internships.id,
+                internships.title,
+                internships.status,
+                internships.places_count,
+                internships.academic_year,
+                companies.name,
+                companies.siret
+             ORDER BY internships.id DESC'
+        );
+        $statement->execute($params);
+
+        return $statement->fetchAll();
     }
 }

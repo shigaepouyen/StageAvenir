@@ -8,6 +8,7 @@ use App\Repositories\CompanyRepository;
 use App\Repositories\ApplicationRepository;
 use App\Repositories\InternshipRepository;
 use App\Repositories\TagMappingRepository;
+use App\Repositories\UserRepository;
 use App\Support\ApplicationMailer;
 use App\Support\SessionManager;
 use PDO;
@@ -24,19 +25,30 @@ final class InternshipController
         'Culture',
         'Administration',
     ];
+    private const APPLICATION_STATUSES = ['new', 'contacted', 'accepted', 'rejected'];
+    private const APPLICATION_STATUS_LABELS = [
+        'new' => 'Nouvelle',
+        'contacted' => 'Contactee',
+        'accepted' => 'Acceptee',
+        'rejected' => 'Refusee',
+    ];
 
+    private PDO $pdo;
     private CompanyRepository $companies;
     private ApplicationRepository $applications;
     private InternshipRepository $internships;
     private TagMappingRepository $tagMappings;
+    private UserRepository $users;
     private ApplicationMailer $applicationMailer;
 
     public function __construct(PDO $pdo, array $mailConfig)
     {
+        $this->pdo = $pdo;
         $this->companies = new CompanyRepository($pdo);
         $this->applications = new ApplicationRepository($pdo);
         $this->internships = new InternshipRepository($pdo);
         $this->tagMappings = new TagMappingRepository($pdo);
+        $this->users = new UserRepository($pdo);
         $this->applicationMailer = new ApplicationMailer($mailConfig);
     }
 
@@ -51,6 +63,7 @@ final class InternshipController
         }
 
         $items = $this->internships->findAllByCompanyId((int) $company['id']);
+        $newApplicationsCount = $this->applications->countNewByCompanyId((int) $company['id']);
 
         if (($_GET['status'] ?? null) === 'created') {
             $success = 'Offre de stage ajoutee.';
@@ -115,8 +128,7 @@ final class InternshipController
             'academic_year' => $formData['academic_year'],
         ]);
 
-        header('Location: /internships?status=created', true, 302);
-        exit;
+        app_redirect('/internships?status=created');
     }
 
     public function setSleeping(string $id): void
@@ -150,13 +162,13 @@ final class InternshipController
 
         set_internship_status($internshipId, 'sleeping');
 
-        header('Location: /internships?status=sleeping', true, 302);
-        exit;
+        app_redirect('/internships?status=sleeping');
     }
 
     public function studentList(): void
     {
         $title = 'Offres de stage disponibles';
+        $currentUser = SessionManager::currentUser();
         $items = get_active_internships();
         $origin = null;
         $markers = $this->buildMapMarkers($items, null);
@@ -167,6 +179,7 @@ final class InternshipController
     public function searchPage(): void
     {
         $title = 'Recherche de stages';
+        $currentUser = SessionManager::currentUser();
         $availableTags = $this->tagMappings->findDistinctTagNames();
         $keyword = trim((string) ($_GET['q'] ?? ''));
         $selectedTag = trim((string) ($_GET['tag'] ?? ''));
@@ -250,8 +263,12 @@ final class InternshipController
         $markers = $this->buildMapMarkers([$internship], $origin);
 
         if ($currentUser === null) {
-            header('Location: /login', true, 302);
-            exit;
+            app_redirect('/login?' . http_build_query([
+                'return_to' => '/offers/' . (int) $internship['id'] . '?' . http_build_query([
+                    'origin_lat' => $originLat,
+                    'origin_lng' => $originLng,
+                ]) . '#apply',
+            ]));
         }
 
         if (($currentUser['role'] ?? '') !== 'student') {
@@ -284,7 +301,19 @@ final class InternshipController
             return;
         }
 
-        $this->applications->create(
+        $existingApplication = $this->applications->findByInternshipIdAndStudentId(
+            (int) $internship['id'],
+            (int) $currentUser['id']
+        );
+
+        if ($existingApplication !== null) {
+            http_response_code(409);
+            $applicationError = "Vous avez deja candidate a cette offre.";
+            require __DIR__ . '/../Views/internship_detail.php';
+            return;
+        }
+
+        $applicationId = $this->applications->create(
             (int) $internship['id'],
             (int) $currentUser['id'],
             $applicationData['message'],
@@ -300,8 +329,9 @@ final class InternshipController
         );
 
         if (!$sent) {
+            $this->applications->deleteById($applicationId);
             http_response_code(500);
-            $applicationError = "La candidature a ete enregistree mais l'email n'a pas pu etre envoye.";
+            $applicationError = "L'email n'a pas pu etre envoye. Reessayez plus tard.";
             require __DIR__ . '/../Views/internship_detail.php';
             return;
         }
@@ -312,8 +342,195 @@ final class InternshipController
             'origin_lng' => $originLng,
         ]);
 
-        header('Location: /offers/' . (int) $internship['id'] . '?' . $queryString, true, 302);
-        exit;
+        app_redirect('/offers/' . (int) $internship['id'] . '?' . $queryString);
+    }
+
+    public function studentApplications(): void
+    {
+        $currentUser = SessionManager::currentUser();
+
+        if ($currentUser === null) {
+            app_redirect('/login?' . http_build_query([
+                'return_to' => '/my-applications',
+            ]));
+        }
+
+        if (($currentUser['role'] ?? '') !== 'student') {
+            http_response_code(403);
+            $title = 'Mes candidatures';
+            $items = [];
+            $error = "Cette page est reservee aux eleves.";
+            require __DIR__ . '/../Views/student_applications.php';
+            return;
+        }
+
+        $title = 'Mes candidatures';
+        $items = $this->applications->findAllByStudentId((int) $currentUser['id']);
+        $error = null;
+
+        require __DIR__ . '/../Views/student_applications.php';
+    }
+
+    public function companyApplications(): void
+    {
+        [$title, $company, $error, $success, $accessDenied] = $this->guardWithCompany();
+
+        $availableStatuses = self::APPLICATION_STATUS_LABELS;
+        $availableInternships = [];
+        $items = [];
+        $selectedStatus = trim((string) ($_GET['status_filter'] ?? ''));
+        $selectedInternshipId = trim((string) ($_GET['internship_id'] ?? ''));
+        $newApplicationsCount = 0;
+
+        if ($accessDenied) {
+            require __DIR__ . '/../Views/company_applications.php';
+            return;
+        }
+
+        $title = 'Candidatures recues';
+        $availableInternships = $this->internships->findAllByCompanyId((int) $company['id']);
+        $newApplicationsCount = $this->applications->countNewByCompanyId((int) $company['id']);
+
+        if ($selectedStatus !== '' && !isset(self::APPLICATION_STATUS_LABELS[$selectedStatus])) {
+            $selectedStatus = '';
+        }
+
+        $internshipId = null;
+
+        if ($selectedInternshipId !== '' && ctype_digit($selectedInternshipId)) {
+            foreach ($availableInternships as $internshipRow) {
+                if ((int) $internshipRow['id'] === (int) $selectedInternshipId) {
+                    $internshipId = (int) $selectedInternshipId;
+                    break;
+                }
+            }
+        }
+
+        $items = $this->applications->findAllByCompanyId(
+            (int) $company['id'],
+            $internshipId,
+            $selectedStatus === '' ? null : $selectedStatus
+        );
+
+        if (($_GET['status'] ?? null) === 'updated' && ($_GET['offer_status'] ?? null) === 'full') {
+            $success = "Le statut de la candidature a ete mis a jour. L'offre est maintenant invisible car toutes les places sont prises.";
+        } elseif (($_GET['status'] ?? null) === 'updated' && ($_GET['offer_status'] ?? null) === 'reopened') {
+            $success = "Le statut de la candidature a ete mis a jour. L'offre redevient visible car une place s'est liberee.";
+        } elseif (($_GET['status'] ?? null) === 'updated') {
+            $success = 'Le statut de la candidature a ete mis a jour.';
+        }
+
+        require __DIR__ . '/../Views/company_applications.php';
+    }
+
+    public function updateApplicationStatus(string $id): void
+    {
+        [$title, $company, $error, $success, $accessDenied] = $this->guardWithCompany();
+
+        $availableStatuses = self::APPLICATION_STATUS_LABELS;
+        $availableInternships = [];
+        $items = [];
+        $selectedStatus = trim((string) ($_POST['status_filter'] ?? ''));
+        $selectedInternshipId = trim((string) ($_POST['internship_id'] ?? ''));
+        $newApplicationsCount = 0;
+
+        if ($accessDenied) {
+            require __DIR__ . '/../Views/company_applications.php';
+            return;
+        }
+
+        $title = 'Candidatures recues';
+        $availableInternships = $this->internships->findAllByCompanyId((int) $company['id']);
+        $newApplicationsCount = $this->applications->countNewByCompanyId((int) $company['id']);
+
+        $applicationId = (int) $id;
+        $newStatus = trim((string) ($_POST['new_status'] ?? ''));
+
+        if (!in_array($newStatus, self::APPLICATION_STATUSES, true)) {
+            http_response_code(422);
+            $error = 'Le statut de candidature demande est invalide.';
+            $items = $this->applications->findAllByCompanyId((int) $company['id']);
+            require __DIR__ . '/../Views/company_applications.php';
+            return;
+        }
+
+        $application = $this->applications->findByIdAndCompanyId($applicationId, (int) $company['id']);
+
+        if ($application === null) {
+            http_response_code(404);
+            $error = 'Candidature introuvable.';
+            $items = $this->applications->findAllByCompanyId((int) $company['id']);
+            require __DIR__ . '/../Views/company_applications.php';
+            return;
+        }
+
+        $offerClosedAutomatically = false;
+        $offerReopenedAutomatically = false;
+
+        try {
+            $this->pdo->beginTransaction();
+            $previousStatus = (string) ($application['status'] ?? '');
+            $this->applications->updateStatusById($applicationId, $newStatus);
+
+            $internship = $this->internships->findByIdAndCompanyId((int) $application['internship_id'], (int) $company['id']);
+
+            if (
+                $internship !== null
+                && (int) ($internship['places_count'] ?? 0) > 0
+            ) {
+                $acceptedCount = $this->applications->countAcceptedByInternshipId((int) $internship['id']);
+                $placesCount = (int) $internship['places_count'];
+                $internshipStatus = (string) $internship['status'];
+
+                if ($internshipStatus === 'active' && $acceptedCount >= $placesCount) {
+                    $this->internships->updateStatusById((int) $internship['id'], 'sleeping');
+                    $offerClosedAutomatically = true;
+                }
+
+                if (
+                    $internshipStatus === 'sleeping'
+                    && $previousStatus === 'accepted'
+                    && $newStatus !== 'accepted'
+                    && ($acceptedCount + 1) >= $placesCount
+                    && $acceptedCount < $placesCount
+                ) {
+                    $this->internships->updateStatusById((int) $internship['id'], 'active');
+                    $offerReopenedAutomatically = true;
+                }
+            }
+
+            $this->pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            http_response_code(500);
+            $error = "Impossible de mettre a jour la candidature pour le moment.";
+            $items = $this->applications->findAllByCompanyId((int) $company['id']);
+            require __DIR__ . '/../Views/company_applications.php';
+            return;
+        }
+
+        $query = [
+            'status' => 'updated',
+        ];
+
+        if ($offerClosedAutomatically) {
+            $query['offer_status'] = 'full';
+        } elseif ($offerReopenedAutomatically) {
+            $query['offer_status'] = 'reopened';
+        }
+
+        if ($selectedInternshipId !== '' && ctype_digit($selectedInternshipId)) {
+            $query['internship_id'] = $selectedInternshipId;
+        }
+
+        if ($selectedStatus !== '' && isset(self::APPLICATION_STATUS_LABELS[$selectedStatus])) {
+            $query['status_filter'] = $selectedStatus;
+        }
+
+        app_redirect('/company-applications?' . http_build_query($query));
     }
 
     public function adminIndex(): void
@@ -336,6 +553,167 @@ final class InternshipController
         }
 
         require __DIR__ . '/../Views/internships_admin.php';
+    }
+
+    public function adminDashboard(): void
+    {
+        [$title, $error, $success, $accessDenied] = $this->guardAdmin();
+
+        $title = 'Tableau de bord college';
+        $availableStatuses = self::APPLICATION_STATUS_LABELS;
+        $availableClasses = $this->applications->findDistinctClasses();
+        $availableCompanies = $this->applications->findDistinctCompaniesForAdmin();
+        $selectedClass = trim((string) ($_GET['class_filter'] ?? ''));
+        $selectedStatus = trim((string) ($_GET['status_filter'] ?? ''));
+        $selectedCompanyId = trim((string) ($_GET['company_id'] ?? ''));
+        $selectedInternshipId = trim((string) ($_GET['internship_id'] ?? ''));
+        $availableInternships = [];
+        $items = [];
+        $summary = [
+            'total' => 0,
+            'new' => 0,
+            'contacted' => 0,
+            'accepted' => 0,
+            'rejected' => 0,
+            'students_without_application' => 0,
+        ];
+        $studentsWithoutApplications = [];
+        $openOffers = [];
+        $fullOffers = [];
+        $overloadedOffers = [];
+
+        if ($accessDenied) {
+            require __DIR__ . '/../Views/admin_dashboard.php';
+            return;
+        }
+
+        if (!in_array($selectedClass, $availableClasses, true)) {
+            $selectedClass = '';
+        }
+
+        if (!isset(self::APPLICATION_STATUS_LABELS[$selectedStatus])) {
+            $selectedStatus = '';
+        }
+
+        $companyId = $this->validateEntityFilter($selectedCompanyId, $availableCompanies);
+        $availableInternships = $this->applications->findDistinctInternshipsForAdmin($companyId);
+        $internshipId = $this->validateEntityFilter($selectedInternshipId, $availableInternships);
+
+        $items = $this->applications->findAllForAdmin(
+            $selectedClass === '' ? null : $selectedClass,
+            $selectedStatus === '' ? null : $selectedStatus,
+            $companyId,
+            $internshipId
+        );
+        $summary = $this->buildApplicationSummary($items);
+        $summary['students_without_application'] = $this->users->countStudentsWithoutApplications();
+
+        $studentsWithoutApplications = $this->users->findStudentsWithoutApplications(25);
+        $openOffers = $this->internships->findOpenOffersOverview($companyId, $internshipId);
+
+        foreach ($openOffers as &$offer) {
+            $placesCount = max(0, (int) ($offer['places_count'] ?? 0));
+            $acceptedCount = (int) ($offer['accepted_applications'] ?? 0);
+            $totalApplications = (int) ($offer['total_applications'] ?? 0);
+            $offer['remaining_places'] = max(0, $placesCount - $acceptedCount);
+            $offer['is_full'] = $placesCount > 0 && $acceptedCount >= $placesCount;
+            $offer['is_overloaded'] = $placesCount > 0 && $totalApplications > $placesCount;
+        }
+        unset($offer);
+
+        $fullOffers = array_values(array_filter(
+            $openOffers,
+            static fn (array $offer): bool => !empty($offer['is_full'])
+        ));
+        $overloadedOffers = array_values(array_filter(
+            $openOffers,
+            static fn (array $offer): bool => !empty($offer['is_overloaded'])
+        ));
+
+        require __DIR__ . '/../Views/admin_dashboard.php';
+    }
+
+    public function exportAdminDashboardCsv(): void
+    {
+        [$title, $error, $success, $accessDenied] = $this->guardAdmin();
+
+        if ($accessDenied) {
+            require __DIR__ . '/../Views/internships_admin.php';
+            return;
+        }
+
+        $availableClasses = $this->applications->findDistinctClasses();
+        $availableCompanies = $this->applications->findDistinctCompaniesForAdmin();
+        $selectedClass = trim((string) ($_GET['class_filter'] ?? ''));
+        $selectedStatus = trim((string) ($_GET['status_filter'] ?? ''));
+        $selectedCompanyId = trim((string) ($_GET['company_id'] ?? ''));
+        $selectedInternshipId = trim((string) ($_GET['internship_id'] ?? ''));
+
+        if (!in_array($selectedClass, $availableClasses, true)) {
+            $selectedClass = '';
+        }
+
+        if (!isset(self::APPLICATION_STATUS_LABELS[$selectedStatus])) {
+            $selectedStatus = '';
+        }
+
+        $companyId = $this->validateEntityFilter($selectedCompanyId, $availableCompanies);
+        $availableInternships = $this->applications->findDistinctInternshipsForAdmin($companyId);
+        $internshipId = $this->validateEntityFilter($selectedInternshipId, $availableInternships);
+
+        $items = $this->applications->findAllForAdmin(
+            $selectedClass === '' ? null : $selectedClass,
+            $selectedStatus === '' ? null : $selectedStatus,
+            $companyId,
+            $internshipId
+        );
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="suivi-college-' . date('Ymd-His') . '.csv"');
+
+        $output = fopen('php://output', 'wb');
+
+        if ($output === false) {
+            http_response_code(500);
+            echo 'Impossible de generer le CSV.';
+            exit;
+        }
+
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, [
+            'Date',
+            'Eleve',
+            'Classe',
+            'Statut candidature',
+            'Offre',
+            'Entreprise',
+            'Statut offre',
+            'Annee scolaire',
+            'Message',
+            'Anonymisee',
+        ], ';');
+
+        foreach ($items as $item) {
+            $studentLabel = (string) ($item['student_email'] ?? $item['student_pseudonym'] ?? 'eleve non renseigne');
+            $statusLabel = self::APPLICATION_STATUS_LABELS[(string) ($item['status'] ?? '')] ?? (string) ($item['status'] ?? '');
+            $isAnonymized = (string) ($item['anonymized_at'] ?? '') !== '';
+
+            fputcsv($output, [
+                date('d/m/Y H:i', strtotime((string) $item['created_at'])),
+                $studentLabel,
+                (string) ($item['classe'] ?? ''),
+                $statusLabel,
+                (string) ($item['internship_title'] ?? ''),
+                (string) ($item['company_label'] ?? ''),
+                (string) ($item['internship_status'] ?? ''),
+                (string) ($item['academic_year'] ?? ''),
+                (string) ($item['message'] ?? ''),
+                $isAnonymized ? 'oui' : 'non',
+            ], ';');
+        }
+
+        fclose($output);
+        exit;
     }
 
     public function archive(string $id): void
@@ -363,8 +741,7 @@ final class InternshipController
 
         set_internship_status($internshipId, 'archived');
 
-        header('Location: /admin/internships?status=archived', true, 302);
-        exit;
+        app_redirect('/admin/internships?status=archived');
     }
 
     private function guardWithCompany(): array
@@ -373,8 +750,7 @@ final class InternshipController
         $title = 'Mes offres de stage';
 
         if ($user === null) {
-            header('Location: /login', true, 302);
-            exit;
+            app_redirect('/login');
         }
 
         if (!in_array($user['role'], ['parent', 'company', 'admin'], true)) {
@@ -411,8 +787,7 @@ final class InternshipController
         $title = 'Administration des offres';
 
         if ($user === null) {
-            header('Location: /login', true, 302);
-            exit;
+            app_redirect('/login');
         }
 
         if (($user['role'] ?? '') !== 'admin') {
@@ -451,6 +826,47 @@ final class InternshipController
     public static function sectorTags(): array
     {
         return self::SECTOR_TAGS;
+    }
+
+    public static function applicationStatusLabels(): array
+    {
+        return self::APPLICATION_STATUS_LABELS;
+    }
+
+    private function validateEntityFilter(string $selectedId, array $rows): ?int
+    {
+        if ($selectedId === '' || !ctype_digit($selectedId)) {
+            return null;
+        }
+
+        foreach ($rows as $row) {
+            if ((int) ($row['id'] ?? 0) === (int) $selectedId) {
+                return (int) $selectedId;
+            }
+        }
+
+        return null;
+    }
+
+    private function buildApplicationSummary(array $items): array
+    {
+        $summary = [
+            'total' => count($items),
+            'new' => 0,
+            'contacted' => 0,
+            'accepted' => 0,
+            'rejected' => 0,
+        ];
+
+        foreach ($items as $item) {
+            $status = (string) ($item['status'] ?? '');
+
+            if (isset($summary[$status])) {
+                $summary[$status]++;
+            }
+        }
+
+        return $summary;
     }
 
     private function normalizeOrigin(string $lat, string $lng): ?array

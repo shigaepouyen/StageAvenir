@@ -22,6 +22,16 @@ CREATE TABLE auth_tokens (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE magic_link_requests (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    email VARCHAR(190) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_magic_link_requests_email_requested_at (email, requested_at),
+    KEY idx_magic_link_requests_ip_requested_at (ip_address, requested_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE companies (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -80,6 +90,7 @@ CREATE TABLE applications (
     internship_id BIGINT UNSIGNED NOT NULL,
     student_id BIGINT UNSIGNED DEFAULT NULL,
     student_pseudonym VARCHAR(64) DEFAULT NULL,
+    status ENUM('new', 'contacted', 'accepted', 'rejected') NOT NULL DEFAULT 'new',
     message TEXT NOT NULL,
     classe VARCHAR(100) NOT NULL,
     anonymized_at DATETIME DEFAULT NULL,
@@ -87,6 +98,8 @@ CREATE TABLE applications (
     PRIMARY KEY (id),
     KEY idx_applications_internship_id (internship_id),
     KEY idx_applications_student_id (student_id),
+    KEY idx_applications_status (status),
+    UNIQUE KEY uq_applications_internship_student (internship_id, student_id),
     KEY idx_applications_anonymized_at (anonymized_at),
     KEY idx_applications_created_at (created_at),
     CONSTRAINT fk_applications_internship

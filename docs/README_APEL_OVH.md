@@ -7,6 +7,7 @@ Ce document explique comment mettre Avenir Pro en ligne sur un hebergement OVH m
 Envoyez tout le contenu du projet dans votre espace FTP OVH, par exemple dans :
 
 - `www/StageAvenir/`
+- n'oubliez pas le fichier cache `.htaccess`
 
 Le point d'entree de l'application est :
 
@@ -26,6 +27,11 @@ Dans phpMyAdmin OVH :
 2. importez d'abord `schema.sql`
 3. importez ensuite `seed.sql` si vous voulez charger les donnees d'exemple
 
+Si vous mettez a jour une base deja existante, importez aussi :
+
+- `scripts/sql/step15_hardening.sql`
+- `scripts/sql/step18_company_applications.sql`
+
 ## 3. Configuration
 Copiez `.env.example` vers `.env.local`, puis adaptez au minimum :
 
@@ -37,6 +43,10 @@ Copiez `.env.example` vers `.env.local`, puis adaptez au minimum :
 - `DB_NAME`
 - `DB_USER`
 - `DB_PASS`
+
+Exemple si l'application est servie dans un sous-repertoire OVH :
+
+- `APP_URL=https://votre-domaine.fr/StageAvenir`
 
 Sur OVH, placez `.env.local` au meme niveau que `index.php`, donc par exemple :
 
@@ -94,7 +104,8 @@ Exemples de scripts :
 3. verifiez qu'un email Magic Link part bien
 4. verifiez qu'une entreprise peut creer une offre
 5. verifiez qu'un eleve peut rechercher et candidater
-6. testez un script CRON manuellement une premiere fois
+6. verifiez que l'admin peut ouvrir `/admin/dashboard` et exporter le CSV de suivi
+7. testez un script CRON manuellement une premiere fois
 
 ## 9. Point d'attention OVH
 Le cookie de session est prevu pour un site en HTTPS. Il faut donc activer le certificat SSL sur le domaine avant usage normal.

@@ -23,6 +23,7 @@ Base initiale de l'application web Avenir Pro en PHP 8.2 avec MariaDB et FlightP
 - PDO avec prepared statements.
 - Sorties HTML echappees avec `htmlspecialchars`.
 - Protection CSRF sur tous les formulaires `POST`.
+- URLs internes centralisees pour supporter un deploiement en sous-repertoire OVH.
 - Aucun framework lourd.
 - Aucun SQLite.
 
@@ -30,6 +31,7 @@ Base initiale de l'application web Avenir Pro en PHP 8.2 avec MariaDB et FlightP
 - `/login` affiche le formulaire d'authentification par email.
 - Un Magic Link avec `selector` et `token` est envoye par email.
 - Le token expire au bout de 20 minutes par defaut.
+- Un rate limiting simple limite les demandes par email et par IP.
 - La session PHP est configuree avec cookies `HttpOnly` et `Secure` pour 30 jours.
 
 ## Profil entreprise
@@ -54,6 +56,11 @@ Base initiale de l'application web Avenir Pro en PHP 8.2 avec MariaDB et FlightP
 - Les cartes Leaflet affichent uniquement les offres disposant de coordonnees `lat/lng`.
 - `/offers/{id}` affiche un formulaire de candidature eleve.
 - Les candidatures sont stockees dans `applications` puis envoyees par email au parent/entreprise avec l'email eleve en `Reply-To`.
+- Une meme offre ne peut pas recevoir plusieurs candidatures du meme eleve tant que la candidature precedente n'a pas ete anonymisee.
+- `/company-applications` permet au parent ou a l'entreprise de filtrer les candidatures recues et de faire evoluer leur statut (`new`, `contacted`, `accepted`, `rejected`).
+- Lorsqu'une offre atteint son nombre de places via les candidatures `accepted`, elle passe automatiquement en `sleeping` pour devenir invisible cote eleve.
+- Si une candidature `accepted` repasse ensuite a un autre statut et qu'une place se libere, l'offre peut redevenir automatiquement `active`.
+- `/admin/dashboard` fournit un tableau de bord referent/college avec filtres, alertes simples et export CSV des candidatures.
 
 ## Referentiel ONISEP
 - `ref_jobs` stocke un referentiel local des metiers ONISEP.
@@ -74,3 +81,5 @@ Base initiale de l'application web Avenir Pro en PHP 8.2 avec MariaDB et FlightP
 
 ## Deploiement OVH
 - Un guide simple pour l'admin APEL est disponible dans `docs/README_APEL_OVH.md`.
+- Un script SQL de mise a niveau rapide est disponible dans `scripts/sql/step15_hardening.sql`.
+- Un script SQL complementaire est disponible dans `scripts/sql/step18_company_applications.sql`.

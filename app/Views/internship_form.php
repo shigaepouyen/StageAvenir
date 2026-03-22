@@ -18,7 +18,7 @@ declare(strict_types=1);
         <?php endif; ?>
 
         <?php if (!empty($company)): ?>
-            <form method="post" action="/internships/create">
+            <form method="post" action="<?= htmlspecialchars(app_path('/internships/create'), ENT_QUOTES, 'UTF-8'); ?>">
                 <input
                     type="hidden"
                     name="csrf_token"
@@ -79,10 +79,10 @@ declare(strict_types=1);
                 <button type="submit">Publier l'offre</button>
             </form>
         <?php else: ?>
-            <p><a href="/company-profile">Completer le profil entreprise</a></p>
+            <p><a href="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">Completer le profil entreprise</a></p>
         <?php endif; ?>
 
-        <p><a href="/internships">Retour a mes offres</a></p>
+        <p><a href="<?= htmlspecialchars(app_path('/internships'), ENT_QUOTES, 'UTF-8'); ?>">Retour a mes offres</a></p>
     </main>
 </body>
 </html>

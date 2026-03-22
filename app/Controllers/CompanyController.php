@@ -75,8 +75,7 @@ final class CompanyController
             $this->companies->updateProfileByUserId((int) $user['id'], $profile);
         }
 
-        header('Location: /company-profile?status=saved', true, 302);
-        exit;
+        app_redirect('/company-profile?status=saved');
     }
 
     public function search(): void
@@ -179,8 +178,7 @@ final class CompanyController
             $this->companies->updateProfileByUserId((int) $user['id'], $profile);
         }
 
-        header('Location: /company-profile?status=saved', true, 302);
-        exit;
+        app_redirect('/company-profile?status=saved');
     }
 
     private function canManageCompanyProfile(string $role): bool
@@ -193,8 +191,7 @@ final class CompanyController
         $user = SessionManager::currentUser();
 
         if ($user === null) {
-            header('Location: /login', true, 302);
-            exit;
+            app_redirect('/login');
         }
 
         $title = 'Profil entreprise';

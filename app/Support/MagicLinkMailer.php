@@ -13,11 +13,18 @@ final class MagicLinkMailer
     ) {
     }
 
-    public function sendMagicLink(string $email, string $selector, string $validator): bool
+    public function sendMagicLink(string $email, string $selector, string $validator, string $returnTo = '/'): bool
     {
-        $link = $this->appUrl
-            . '/magic-link?selector=' . rawurlencode($selector)
-            . '&token=' . rawurlencode($validator);
+        $query = [
+            'selector' => $selector,
+            'token' => $validator,
+        ];
+
+        if ($returnTo !== '') {
+            $query['return_to'] = $returnTo;
+        }
+
+        $link = $this->appUrl . '/magic-link?' . http_build_query($query);
 
         $subject = 'Votre lien de connexion Avenir Pro';
         $message = implode("\r\n", [

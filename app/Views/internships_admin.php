@@ -11,6 +11,7 @@ declare(strict_types=1);
 </head>
 <body>
     <main>
+        <p><a href="<?= htmlspecialchars(app_path('/admin/dashboard'), ENT_QUOTES, 'UTF-8'); ?>">Voir le tableau college</a></p>
         <h1><?= htmlspecialchars($title ?? 'Administration des offres', ENT_QUOTES, 'UTF-8'); ?></h1>
 
         <?php if (!empty($error)): ?>
@@ -32,7 +33,7 @@ declare(strict_types=1);
                             <h3><?= htmlspecialchars((string) $item['title'], ENT_QUOTES, 'UTF-8'); ?></h3>
                             <p>Entreprise : <?= htmlspecialchars((string) ($item['company_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
                             <p>Statut : <?= htmlspecialchars((string) $item['status'], ENT_QUOTES, 'UTF-8'); ?></p>
-                            <form method="post" action="/admin/internships/<?= htmlspecialchars((string) $item['id'], ENT_QUOTES, 'UTF-8'); ?>/archive">
+                            <form method="post" action="<?= htmlspecialchars(app_path('/admin/internships/' . (string) $item['id'] . '/archive'), ENT_QUOTES, 'UTF-8'); ?>">
                                 <input
                                     type="hidden"
                                     name="csrf_token"
@@ -61,7 +62,7 @@ declare(strict_types=1);
             </section>
         <?php endif; ?>
 
-        <p><a href="/">Retour a l'accueil</a></p>
+        <p><a href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Retour a l'accueil</a></p>
     </main>
 </body>
 </html>
