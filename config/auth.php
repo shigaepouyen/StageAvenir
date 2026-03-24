@@ -11,6 +11,14 @@ return [
     'mail' => [
         'from_email' => getenv('MAIL_FROM') ?: 'no-reply@example.test',
         'from_name' => getenv('MAIL_FROM_NAME') ?: 'Avenir Pro',
+        'smtp_host' => getenv('SMTP_HOST') ?: '',
+        'smtp_username' => getenv('SMTP_USERNAME') ?: '',
+        'smtp_password' => getenv('SMTP_PASSWORD') ?: '',
+        'smtp_port' => (int) (getenv('SMTP_PORT') ?: '0'),
+        'smtp_from_email' => getenv('SMTP_FROM_EMAIL') ?: (getenv('MAIL_FROM') ?: 'no-reply@example.test'),
+        'smtp_from_name' => getenv('SMTP_FROM_NAME') ?: (getenv('MAIL_FROM_NAME') ?: 'Avenir Pro'),
+        'smtp_timeout_seconds' => (int) (getenv('SMTP_TIMEOUT_SECONDS') ?: '15'),
+        'smtp_encryption' => getenv('SMTP_ENCRYPTION') ?: '',
     ],
     'magic_link' => [
         'ttl_minutes' => (int) (getenv('MAGIC_LINK_TTL_MINUTES') ?: '20'),

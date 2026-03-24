@@ -13,6 +13,9 @@ use PDO;
 
 final class AuthController
 {
+    private const ACCOUNT_TYPE_STUDENT = 'student';
+    private const ACCOUNT_TYPE_COMPANY = 'company';
+
     private UserRepository $users;
     private AuthTokenRepository $tokens;
     private MagicLinkRequestRepository $requestLog;
@@ -38,7 +41,9 @@ final class AuthController
         $status = $_GET['status'] ?? null;
         $error = null;
         $success = null;
-        $returnTo = $this->normalizeReturnTo($_GET['return_to'] ?? '/');
+        $selectedAccountType = $this->normalizeAccountType($_GET['account_type'] ?? null);
+        $returnTo = $this->resolveReturnTo($_GET['return_to'] ?? null, $selectedAccountType);
+        $email = '';
 
         if ($status === 'sent') {
             $success = "Si l'email est valide, un lien de connexion a ete envoye.";
@@ -57,7 +62,8 @@ final class AuthController
         $error = null;
         $success = null;
         $email = trim((string) ($_POST['email'] ?? ''));
-        $returnTo = $this->normalizeReturnTo($_POST['return_to'] ?? '/');
+        $selectedAccountType = $this->normalizeAccountType($_POST['account_type'] ?? null);
+        $returnTo = $this->resolveReturnTo($_POST['return_to'] ?? null, $selectedAccountType);
 
         if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             $error = "Veuillez saisir une adresse email valide.";
@@ -83,6 +89,13 @@ final class AuthController
 
         $user = $this->users->findByEmail($email);
 
+        if ($user !== null && $selectedAccountType === self::ACCOUNT_TYPE_COMPANY && ($user['role'] ?? '') === self::ACCOUNT_TYPE_STUDENT) {
+            http_response_code(409);
+            $error = "Cette adresse email existe deja comme compte eleve. Utilisez une autre adresse pour l'entreprise ou demandez a l'administrateur de corriger le role.";
+            require __DIR__ . '/../Views/login.php';
+            return;
+        }
+
         if ($user === null) {
             if (!$this->config['magic_link']['auto_create_user']) {
                 $success = "Si l'email est valide, un lien de connexion a ete envoye.";
@@ -90,7 +103,7 @@ final class AuthController
                 return;
             }
 
-            $userId = $this->users->create($email, $this->config['magic_link']['default_role']);
+            $userId = $this->users->create($email, $this->roleForAccountType($selectedAccountType));
             $user = $this->users->findById($userId);
         }
 
@@ -126,6 +139,7 @@ final class AuthController
 
         app_redirect('/login?' . http_build_query([
             'status' => 'sent',
+            'account_type' => $selectedAccountType,
             'return_to' => $returnTo,
         ]));
     }
@@ -137,7 +151,7 @@ final class AuthController
         $success = null;
         $selector = trim((string) ($_GET['selector'] ?? ''));
         $validator = trim((string) ($_GET['token'] ?? ''));
-        $returnTo = $this->normalizeReturnTo($_GET['return_to'] ?? '/');
+        $returnTo = $this->resolveReturnTo($_GET['return_to'] ?? null, self::ACCOUNT_TYPE_STUDENT);
 
         if ($selector === '' || $validator === '') {
             http_response_code(400);
@@ -212,20 +226,45 @@ final class AuthController
         return '0.0.0.0';
     }
 
-    private function normalizeReturnTo(mixed $value): string
+    private function normalizeAccountType(mixed $value): string
+    {
+        $accountType = trim((string) $value);
+
+        return $accountType === self::ACCOUNT_TYPE_COMPANY
+            ? self::ACCOUNT_TYPE_COMPANY
+            : self::ACCOUNT_TYPE_STUDENT;
+    }
+
+    private function roleForAccountType(string $accountType): string
+    {
+        return $accountType === self::ACCOUNT_TYPE_COMPANY
+            ? self::ACCOUNT_TYPE_COMPANY
+            : (string) $this->config['magic_link']['default_role'];
+    }
+
+    private function defaultReturnToFor(string $accountType): string
+    {
+        return $accountType === self::ACCOUNT_TYPE_COMPANY ? '/company-profile' : '/';
+    }
+
+    private function resolveReturnTo(mixed $value, string $accountType): string
     {
         $returnTo = trim((string) $value);
 
-        if ($returnTo === '' || str_contains($returnTo, "\n") || str_contains($returnTo, "\r")) {
-            return '/';
+        if ($returnTo === '') {
+            return $this->defaultReturnToFor($accountType);
+        }
+
+        if (str_contains($returnTo, "\n") || str_contains($returnTo, "\r")) {
+            return $this->defaultReturnToFor($accountType);
         }
 
         if (preg_match('#^https?://#i', $returnTo) === 1 || str_starts_with($returnTo, '//')) {
-            return '/';
+            return $this->defaultReturnToFor($accountType);
         }
 
         if (!str_starts_with($returnTo, '/')) {
-            return '/';
+            return $this->defaultReturnToFor($accountType);
         }
 
         $basePath = app_base_path();
@@ -235,6 +274,6 @@ final class AuthController
             $returnTo = $returnTo === '' ? '/' : $returnTo;
         }
 
-        return str_starts_with($returnTo, '/') ? $returnTo : '/';
+        return str_starts_with($returnTo, '/') ? $returnTo : $this->defaultReturnToFor($accountType);
     }
 }

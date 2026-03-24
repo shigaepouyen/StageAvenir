@@ -6,11 +6,14 @@ namespace App\Support;
 
 final class MagicLinkMailer
 {
+    private MailTransport $transport;
+
     public function __construct(
         private array $mailConfig,
         private string $appUrl,
         private int $ttlMinutes
     ) {
+        $this->transport = new MailTransport($mailConfig);
     }
 
     public function sendMagicLink(string $email, string $selector, string $validator, string $returnTo = '/'): bool
@@ -36,15 +39,6 @@ final class MagicLinkMailer
             'Ce lien expire dans ' . $this->ttlMinutes . ' minutes.',
         ]);
 
-        $fromName = str_replace(["\r", "\n"], '', $this->mailConfig['from_name']);
-        $fromEmail = str_replace(["\r", "\n"], '', $this->mailConfig['from_email']);
-
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=UTF-8',
-            'From: ' . sprintf('%s <%s>', $fromName, $fromEmail),
-        ];
-
-        return mail($email, $subject, $message, implode("\r\n", $headers));
+        return $this->transport->sendPlainText($email, $subject, $message);
     }
 }

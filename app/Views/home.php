@@ -48,6 +48,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                         <a class="button" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Commencer ma recherche</a>
                         <?php if ($isGuest): ?>
                             <a class="button-secondary" href="<?= htmlspecialchars(app_path('/login'), ENT_QUOTES, 'UTF-8'); ?>">Me connecter</a>
+                            <a class="button-ghost" href="<?= htmlspecialchars(app_path('/login?account_type=company&return_to=' . rawurlencode('/company-profile')), ENT_QUOTES, 'UTF-8'); ?>">Je suis une entreprise</a>
                         <?php else: ?>
                             <a class="button-secondary" href="<?= htmlspecialchars(app_path('/offers'), ENT_QUOTES, 'UTF-8'); ?>">Voir toutes les offres</a>
                             <a class="button-ghost" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
@@ -99,6 +100,17 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                     <a class="button-secondary" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Lire l'aide eleve</a>
                 </div>
             </section>
+
+            <?php if ($isGuest): ?>
+                <section class="surface" style="margin-top: 1.5rem;">
+                    <p class="eyebrow">Entreprises</p>
+                    <h2 class="section-title">Vous proposez un stage ?</h2>
+                    <p class="section-copy">Un parcours dedie vous permet de creer un compte entreprise, completer votre profil puis publier vos offres en quelques minutes.</p>
+                    <div class="inline-actions">
+                        <a class="button-secondary" href="<?= htmlspecialchars(app_path('/login?account_type=company&return_to=' . rawurlencode('/company-profile')), ENT_QUOTES, 'UTF-8'); ?>">Je suis une entreprise</a>
+                    </div>
+                </section>
+            <?php endif; ?>
         <?php else: ?>
             <section class="hero hero-split">
                 <div class="hero-copy">

@@ -6,10 +6,13 @@ namespace App\Support;
 
 final class RevivalMailer
 {
+    private MailTransport $transport;
+
     public function __construct(
         private array $mailConfig,
         private string $appUrl
     ) {
+        $this->transport = new MailTransport($mailConfig);
     }
 
     public function sendRevivalEmail(
@@ -32,15 +35,6 @@ final class RevivalMailer
             'Oui : ' . $link,
         ]);
 
-        $fromName = str_replace(["\r", "\n"], '', $this->mailConfig['from_name']);
-        $fromEmail = str_replace(["\r", "\n"], '', $this->mailConfig['from_email']);
-
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=UTF-8',
-            'From: ' . sprintf('%s <%s>', $fromName, $fromEmail),
-        ];
-
-        return mail($parentEmail, $subject, $body, implode("\r\n", $headers));
+        return $this->transport->sendPlainText($parentEmail, $subject, $body);
     }
 }

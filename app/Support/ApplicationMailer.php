@@ -6,8 +6,11 @@ namespace App\Support;
 
 final class ApplicationMailer
 {
+    private MailTransport $transport;
+
     public function __construct(private array $mailConfig)
     {
+        $this->transport = new MailTransport($mailConfig);
     }
 
     public function sendToParent(
@@ -30,17 +33,6 @@ final class ApplicationMailer
             $studentMessage,
         ]);
 
-        $fromName = str_replace(["\r", "\n"], '', $this->mailConfig['from_name']);
-        $fromEmail = str_replace(["\r", "\n"], '', $this->mailConfig['from_email']);
-        $safeReplyTo = str_replace(["\r", "\n"], '', $studentEmail);
-
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=UTF-8',
-            'From: ' . sprintf('%s <%s>', $fromName, $fromEmail),
-            'Reply-To: ' . $safeReplyTo,
-        ];
-
-        return mail($parentEmail, $subject, $body, implode("\r\n", $headers));
+        return $this->transport->sendPlainText($parentEmail, $subject, $body, $studentEmail);
     }
 }
