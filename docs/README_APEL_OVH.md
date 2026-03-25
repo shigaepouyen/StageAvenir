@@ -31,6 +31,7 @@ Si vous mettez a jour une base deja existante, importez aussi :
 
 - `scripts/sql/step15_hardening.sql`
 - `scripts/sql/step18_company_applications.sql`
+- `scripts/sql/step20_security_moderation_messaging.sql`
 
 ## 3. Configuration
 Copiez `.env.example` vers `.env.local`, puis adaptez au minimum :
@@ -103,9 +104,12 @@ Exemples de scripts :
 2. testez `/login`
 3. verifiez qu'un email Magic Link part bien
 4. verifiez qu'une entreprise peut creer une offre
-5. verifiez qu'un eleve peut rechercher et candidater
-6. verifiez que l'admin peut ouvrir `/admin/dashboard` et exporter le CSV de suivi
-7. testez un script CRON manuellement une premiere fois
+5. verifiez qu'une entreprise reste en attente de validation tant que l'admin n'a pas valide son profil
+6. verifiez qu'une offre nouvellement soumise reste en attente de validation avant publication
+7. verifiez qu'un eleve peut rechercher, candidater puis discuter dans la webapp sans diffusion de son email
+8. verifiez que l'admin peut ouvrir `/admin/dashboard` et exporter le CSV de suivi
+9. verifiez que le role professeur ne voit que sa classe et que le role responsable de niveau voit tout le niveau
+10. testez un script CRON manuellement une premiere fois
 
 ## 9. Point d'attention OVH
 Le cookie de session est prevu pour un site en HTTPS. Il faut donc activer le certificat SSL sur le domaine avant usage normal.

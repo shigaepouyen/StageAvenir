@@ -109,7 +109,7 @@ $currentOfferReturnTo = '/offers/' . (string) (($internship['id'] ?? $_GET['id']
                     <section class="surface apply-panel" id="apply">
                         <p class="eyebrow">Candidature</p>
                         <h2 class="section-title">Postuler a cette offre</h2>
-                        <p class="form-help">Ton message n'a pas besoin d'etre parfait. Quelques lignes claires suffisent.</p>
+                        <p class="form-help">Ton message n'a pas besoin d'etre parfait. Quelques lignes claires suffisent. Les echanges avec l'entreprise resteront ensuite dans Avenir Pro, sans diffusion de ton email.</p>
 
                         <?php if (!empty($applicationError)): ?>
                             <p class="message message-error"><?= htmlspecialchars($applicationError, ENT_QUOTES, 'UTF-8'); ?></p>

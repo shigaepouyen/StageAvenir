@@ -4,6 +4,8 @@
 -- Les identifiants sont fixes pour rendre les relations lisibles.
 -- Comptes de demo utiles :
 -- - admin@avenirpro.test
+-- - prof.3ea@avenirpro.test
+-- - responsable.niveau@avenirpro.test
 -- - marine.duval@avenirpro.test
 -- - thomas.leroy@avenirpro.test
 -- - zoe.martin@avenirpro.test
@@ -12,23 +14,25 @@
 -- ------------------------------------------------------------
 -- Utilisateurs
 -- ------------------------------------------------------------
-INSERT INTO users (id, email, role, created_at) VALUES
-    (1, 'admin@avenirpro.test', 'admin', '2025-09-01 08:00:00'),
-    (2, 'marine.duval@avenirpro.test', 'parent', '2025-09-01 08:10:00'),
-    (3, 'thomas.leroy@avenirpro.test', 'company', '2025-09-01 08:15:00'),
-    (4, 'nina.caron@avenirpro.test', 'company', '2025-09-01 08:20:00'),
-    (5, 'lucie.bernard@avenirpro.test', 'parent', '2025-09-01 08:25:00'),
-    (6, 'camille.robert@avenirpro.test', 'company', '2025-09-01 08:30:00'),
-    (7, 'hugo.morel@avenirpro.test', 'company', '2025-09-01 08:35:00'),
-    (8, 'zoe.martin@avenirpro.test', 'student', '2025-09-05 09:00:00'),
-    (9, 'yanis.benali@avenirpro.test', 'student', '2025-09-05 09:02:00'),
-    (10, 'lina.petit@avenirpro.test', 'student', '2025-09-05 09:04:00'),
-    (11, 'amine.kaci@avenirpro.test', 'student', '2025-09-05 09:06:00'),
-    (12, 'juliette.dubois@avenirpro.test', 'student', '2025-09-05 09:08:00'),
-    (13, 'sami.elmansouri@avenirpro.test', 'student', '2025-09-05 09:10:00'),
-    (14, 'lea.brunet@avenirpro.test', 'student', '2025-09-05 09:12:00'),
-    (15, 'noah.leruste@avenirpro.test', 'student', '2025-09-05 09:14:00'),
-    (16, 'ines.leclercq@avenirpro.test', 'student', '2025-09-05 09:16:00');
+INSERT INTO users (id, email, role, first_name, last_name, school_class, managed_class, created_at) VALUES
+    (1, 'admin@avenirpro.test', 'admin', 'Claire', 'Moreau', NULL, NULL, '2025-09-01 08:00:00'),
+    (2, 'marine.duval@avenirpro.test', 'parent', 'Marine', 'Duval', NULL, NULL, '2025-09-01 08:10:00'),
+    (3, 'thomas.leroy@avenirpro.test', 'company', 'Thomas', 'Leroy', NULL, NULL, '2025-09-01 08:15:00'),
+    (4, 'nina.caron@avenirpro.test', 'company', 'Nina', 'Caron', NULL, NULL, '2025-09-01 08:20:00'),
+    (5, 'lucie.bernard@avenirpro.test', 'parent', 'Lucie', 'Bernard', NULL, NULL, '2025-09-01 08:25:00'),
+    (6, 'camille.robert@avenirpro.test', 'company', 'Camille', 'Robert', NULL, NULL, '2025-09-01 08:30:00'),
+    (7, 'hugo.morel@avenirpro.test', 'company', 'Hugo', 'Morel', NULL, NULL, '2025-09-01 08:35:00'),
+    (8, 'zoe.martin@avenirpro.test', 'student', 'Zoe', 'Martin', '3e A', NULL, '2025-09-05 09:00:00'),
+    (9, 'yanis.benali@avenirpro.test', 'student', 'Yanis', 'Benali', '3e B', NULL, '2025-09-05 09:02:00'),
+    (10, 'lina.petit@avenirpro.test', 'student', 'Lina', 'Petit', '3e A', NULL, '2025-09-05 09:04:00'),
+    (11, 'amine.kaci@avenirpro.test', 'student', 'Amine', 'Kaci', '3e C', NULL, '2025-09-05 09:06:00'),
+    (12, 'juliette.dubois@avenirpro.test', 'student', 'Juliette', 'Dubois', '3e B', NULL, '2025-09-05 09:08:00'),
+    (13, 'sami.elmansouri@avenirpro.test', 'student', 'Sami', 'Elmansouri', '3e B', NULL, '2025-09-05 09:10:00'),
+    (14, 'lea.brunet@avenirpro.test', 'student', 'Lea', 'Brunet', '3e A', NULL, '2025-09-05 09:12:00'),
+    (15, 'noah.leruste@avenirpro.test', 'student', 'Noah', 'Leruste', '3e C', NULL, '2025-09-05 09:14:00'),
+    (16, 'ines.leclercq@avenirpro.test', 'student', 'Ines', 'Leclercq', '3e C', NULL, '2025-09-05 09:16:00'),
+    (17, 'prof.3ea@avenirpro.test', 'teacher', 'Julie', 'Vasseur', NULL, '3e A', '2025-09-01 08:40:00'),
+    (18, 'responsable.niveau@avenirpro.test', 'level_manager', 'Paul', 'Declercq', NULL, NULL, '2025-09-01 08:45:00');
 
 -- ------------------------------------------------------------
 -- Tags eleves -> prefixes NAF
@@ -50,13 +54,13 @@ INSERT INTO tags_mapping (id, tag_name, naf_prefix) VALUES
 -- ------------------------------------------------------------
 -- Entreprises
 -- ------------------------------------------------------------
-INSERT INTO companies (id, user_id, siret, name, naf_code, address, lat, lng) VALUES
-    (1, 2, '34987654321011', 'Clinique du Parc', '8610Z', '12 avenue du Parc, 59100 Roubaix', 50.6942050, 3.1745590),
-    (2, 3, '51234567890123', 'Studio Pixel Nord', '6201Z', '45 rue de Lille, 59100 Roubaix', 50.6924400, 3.1742800),
-    (3, 4, '42345678901234', 'Ferme des Trois Tilleuls', '0149Z', '88 chemin des Tilleuls, 59910 Bondues', 50.7009100, 3.0938200),
-    (4, 5, '63456789012345', 'Librairie des Arcades', '4761Z', '19 place de la Republique, 59000 Lille', NULL, NULL),
-    (5, 6, '74567890123456', 'Centre Aquatique Blue Wave', '9311Z', '7 rue des Sports, 59200 Tourcoing', 50.7244200, 3.1611000),
-    (6, 7, '85678901234567', 'Mairie de Wattrelos - Communication', '8411Z', 'Place Jean Delvainquiere, 59150 Wattrelos', 50.7019500, 3.2188300);
+INSERT INTO companies (id, user_id, siret, name, naf_code, address, lat, lng, validation_status, validation_checked_at) VALUES
+    (1, 2, '34987654321011', 'Clinique du Parc', '8610Z', '12 avenue du Parc, 59100 Roubaix', 50.6942050, 3.1745590, 'approved', '2025-09-10 09:00:00'),
+    (2, 3, '51234567890123', 'Studio Pixel Nord', '6201Z', '45 rue de Lille, 59100 Roubaix', 50.6924400, 3.1742800, 'approved', '2025-09-10 09:05:00'),
+    (3, 4, '42345678901234', 'Ferme des Trois Tilleuls', '0149Z', '88 chemin des Tilleuls, 59910 Bondues', 50.7009100, 3.0938200, 'approved', '2025-09-10 09:10:00'),
+    (4, 5, '63456789012345', 'Librairie des Arcades', '4761Z', '19 place de la Republique, 59000 Lille', NULL, NULL, 'approved', '2025-09-10 09:15:00'),
+    (5, 6, '74567890123456', 'Centre Aquatique Blue Wave', '9311Z', '7 rue des Sports, 59200 Tourcoing', 50.7244200, 3.1611000, 'approved', '2025-09-10 09:20:00'),
+    (6, 7, '85678901234567', 'Mairie de Wattrelos - Communication', '8411Z', 'Place Jean Delvainquiere, 59150 Wattrelos', 50.7019500, 3.2188300, 'pending', NULL);
 
 -- ------------------------------------------------------------
 -- Referentiel ONISEP minimal de demo
@@ -72,7 +76,7 @@ INSERT INTO ref_jobs (id_onisep, libelle, domaine) VALUES
 -- ------------------------------------------------------------
 -- Offres de stage
 -- ------------------------------------------------------------
-INSERT INTO internships (id, company_id, title, description, sector_tag, places_count, status, academic_year) VALUES
+INSERT INTO internships (id, company_id, title, description, sector_tag, places_count, status, academic_year, validation_status, validation_checked_at) VALUES
     (
         1,
         1,
@@ -81,7 +85,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Sante',
         2,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'approved',
+        '2025-09-12 08:30:00'
     ),
     (
         2,
@@ -91,7 +97,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Sante',
         1,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'approved',
+        '2025-09-12 08:35:00'
     ),
     (
         3,
@@ -101,7 +109,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Tech',
         2,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'approved',
+        '2025-09-12 08:40:00'
     ),
     (
         4,
@@ -111,7 +121,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Culture',
         1,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'pending',
+        NULL
     ),
     (
         5,
@@ -121,7 +133,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Animaux',
         2,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'approved',
+        '2025-09-12 08:50:00'
     ),
     (
         6,
@@ -131,7 +145,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Commerce',
         1,
         'sleeping',
-        '2025-2026'
+        '2025-2026',
+        'approved',
+        '2025-09-12 08:55:00'
     ),
     (
         7,
@@ -141,7 +157,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Sport',
         2,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'approved',
+        '2025-09-12 09:00:00'
     ),
     (
         8,
@@ -151,7 +169,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Administration',
         1,
         'archived',
-        '2024-2025'
+        '2024-2025',
+        'approved',
+        '2024-09-12 09:00:00'
     ),
     (
         9,
@@ -161,7 +181,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Administration',
         1,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'pending',
+        NULL
     ),
     (
         10,
@@ -171,7 +193,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Culture',
         2,
         'sleeping',
-        '2024-2025'
+        '2024-2025',
+        'rejected',
+        '2024-09-15 10:00:00'
     ),
     (
         11,
@@ -181,7 +205,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Sport',
         1,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'approved',
+        '2025-09-12 09:05:00'
     ),
     (
         12,
@@ -191,7 +217,9 @@ INSERT INTO internships (id, company_id, title, description, sector_tag, places_
         'Animaux',
         1,
         'active',
-        '2025-2026'
+        '2025-2026',
+        'pending',
+        NULL
     );
 
 -- ------------------------------------------------------------
@@ -351,6 +379,91 @@ INSERT INTO applications (id, internship_id, student_id, student_pseudonym, stat
         '3e C',
         NULL,
         '2026-02-17 09:05:00'
+    );
+
+-- ------------------------------------------------------------
+-- Discussions de candidature de demo
+-- ------------------------------------------------------------
+INSERT INTO application_messages (id, application_id, sender_user_id, sender_role, sender_label, body, created_at) VALUES
+    (
+        1,
+        1,
+        2,
+        'parent',
+        'Clinique du Parc',
+        'Merci pour ta candidature. Nous revenons vers toi dans la semaine apres une premiere lecture.',
+        '2026-02-04 09:10:00'
+    ),
+    (
+        2,
+        3,
+        3,
+        'company',
+        'Studio Pixel Nord',
+        'Merci pour ton message. Peux-tu confirmer ici que tu es bien disponible sur toute la periode du stage ?',
+        '2026-01-29 10:20:00'
+    ),
+    (
+        3,
+        3,
+        10,
+        'student',
+        'Eleve',
+        'Oui, je suis bien disponible sur toute la semaine de stage.',
+        '2026-01-29 18:05:00'
+    ),
+    (
+        4,
+        6,
+        6,
+        'company',
+        'Centre Aquatique Blue Wave',
+        'Ta candidature a retenu notre attention. Nous reprenons contact ici tres vite.',
+        '2026-01-31 08:40:00'
+    ),
+    (
+        5,
+        10,
+        6,
+        'company',
+        'Centre Aquatique Blue Wave',
+        'Merci pour ton message. L equipe technique relit les candidatures cette semaine.',
+        '2026-02-15 11:20:00'
+    );
+
+-- ------------------------------------------------------------
+-- Notifications de demo
+-- ------------------------------------------------------------
+INSERT INTO notifications (id, recipient_user_id, type, title, body, link_path, is_read, created_at) VALUES
+    (
+        1,
+        8,
+        'application_status',
+        'Ta candidature a evolue',
+        'Le statut de ta candidature chez Studio Pixel Nord a ete mis a jour. Connecte-toi pour voir le detail et poursuivre la discussion.',
+        '/applications/3',
+        0,
+        '2026-02-16 08:45:00'
+    ),
+    (
+        2,
+        2,
+        'new_application',
+        'Nouvelle candidature recue',
+        'Une nouvelle candidature est arrivee sur une de tes offres. Connecte-toi pour la consulter et repondre dans la webapp.',
+        '/applications/1',
+        0,
+        '2026-02-03 18:20:00'
+    ),
+    (
+        3,
+        3,
+        'new_message',
+        'Nouveau message dans une discussion',
+        'Un eleve a repondu dans une discussion de candidature. Connecte-toi pour lire la suite.',
+        '/applications/3',
+        1,
+        '2026-01-29 18:10:00'
     );
 
 -- ------------------------------------------------------------

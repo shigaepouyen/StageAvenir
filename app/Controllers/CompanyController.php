@@ -37,7 +37,7 @@ final class CompanyController
         $searchQuery = '';
         $searchResults = [];
         if (($status = ($_GET['status'] ?? null)) === 'saved') {
-            $success = 'Profil entreprise enregistre.';
+            $success = "Profil entreprise enregistre. Il doit maintenant etre valide par l'administration.";
         }
 
         require __DIR__ . '/../Views/company_profile.php';

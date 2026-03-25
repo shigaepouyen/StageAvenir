@@ -18,6 +18,7 @@ $currentUser = $currentUser ?? null;
             <div class="nav-links">
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Recherche</a>
+                <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
                 <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
             </div>
@@ -69,6 +70,7 @@ $currentUser = $currentUser ?? null;
                         <p class="offer-excerpt"><?= htmlspecialchars((string) $item['message'], ENT_QUOTES, 'UTF-8'); ?></p>
                         <div class="inline-actions">
                             <a class="button" href="<?= htmlspecialchars(app_path('/offers/' . (string) $item['internship_id']), ENT_QUOTES, 'UTF-8'); ?>">Revoir l'offre</a>
+                            <a class="button-secondary" href="<?= htmlspecialchars(app_path('/applications/' . (string) $item['id']), ENT_QUOTES, 'UTF-8'); ?>">Ouvrir la discussion</a>
                         </div>
                     </article>
                 <?php endforeach; ?>

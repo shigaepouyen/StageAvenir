@@ -18,6 +18,9 @@ $currentUser = $user ?? null;
             <div class="nav-links">
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Recherche</a>
+                <?php if ($currentUser !== null): ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
+                <?php endif; ?>
                 <?php if (($currentUser['role'] ?? '') === 'student'): ?>
                     <a class="nav-link" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
                 <?php endif; ?>

@@ -2,8 +2,15 @@ CREATE TABLE users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     email VARCHAR(190) NOT NULL,
     role VARCHAR(50) NOT NULL,
+    first_name VARCHAR(100) DEFAULT NULL,
+    last_name VARCHAR(100) DEFAULT NULL,
+    school_class VARCHAR(100) DEFAULT NULL,
+    managed_class VARCHAR(100) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    KEY idx_users_last_name_first_name (last_name, first_name),
+    KEY idx_users_role_school_class (role, school_class),
+    KEY idx_users_role_managed_class (role, managed_class),
     UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -41,9 +48,12 @@ CREATE TABLE companies (
     address VARCHAR(255) DEFAULT NULL,
     lat DECIMAL(10,7) DEFAULT NULL,
     lng DECIMAL(10,7) DEFAULT NULL,
+    validation_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    validation_checked_at DATETIME DEFAULT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_companies_user_id (user_id),
     UNIQUE KEY uq_companies_siret (siret),
+    KEY idx_companies_validation_status (validation_status),
     CONSTRAINT fk_companies_user
         FOREIGN KEY (user_id) REFERENCES users(id)
         ON DELETE CASCADE
@@ -58,10 +68,13 @@ CREATE TABLE internships (
     places_count INT UNSIGNED NOT NULL,
     status ENUM('active', 'archived', 'sleeping') NOT NULL DEFAULT 'active',
     academic_year VARCHAR(9) NOT NULL,
+    validation_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    validation_checked_at DATETIME DEFAULT NULL,
     PRIMARY KEY (id),
     KEY idx_internships_company_id (company_id),
     KEY idx_internships_status (status),
     KEY idx_internships_sector_tag (sector_tag),
+    KEY idx_internships_validation_status (validation_status),
     CONSTRAINT fk_internships_company
         FOREIGN KEY (company_id) REFERENCES companies(id)
         ON DELETE CASCADE
@@ -107,6 +120,41 @@ CREATE TABLE applications (
         ON DELETE CASCADE,
     CONSTRAINT fk_applications_student
         FOREIGN KEY (student_id) REFERENCES users(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE application_messages (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    application_id BIGINT UNSIGNED NOT NULL,
+    sender_user_id BIGINT UNSIGNED DEFAULT NULL,
+    sender_role VARCHAR(50) NOT NULL,
+    sender_label VARCHAR(120) DEFAULT NULL,
+    body TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_application_messages_application_id (application_id, created_at),
+    KEY idx_application_messages_sender_user_id (sender_user_id),
+    CONSTRAINT fk_application_messages_application
+        FOREIGN KEY (application_id) REFERENCES applications(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_application_messages_sender
+        FOREIGN KEY (sender_user_id) REFERENCES users(id)
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notifications (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    recipient_user_id BIGINT UNSIGNED NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    link_path VARCHAR(255) DEFAULT NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_notifications_recipient_read_created (recipient_user_id, is_read, created_at),
+    CONSTRAINT fk_notifications_recipient
+        FOREIGN KEY (recipient_user_id) REFERENCES users(id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

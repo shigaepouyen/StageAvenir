@@ -40,27 +40,33 @@ Base initiale de l'application web Avenir Pro en PHP 8.1+ avec MariaDB et Flight
 - L'unicite du SIRET est controlee en base et dans le controleur.
 - Une recherche Sirene permet de retrouver une entreprise par nom ou SIRET.
 - Les donnees `name`, `address`, `naf_code`, `lat` et `lng` sont pre-remplies depuis l'API puis sauvegardees.
+- Le profil entreprise passe ensuite par une validation administrative (`pending`, `approved`, `rejected`) avant de pouvoir publier des offres visibles.
 
 ## Offres de stage
 - `/internships` liste les offres de l'entreprise connectee.
-- `/internships/create` permet d'ajouter une offre.
+- `/internships/create` permet de soumettre une offre.
 - Les champs `title`, `description`, `places_count` et la certification sont verifies cote serveur.
-- Le statut initial est `active` et l'annee scolaire est calculee automatiquement.
+- Le statut initial est `active`, l'annee scolaire est calculee automatiquement et la validation initiale est `pending`.
 - Un tag sectoriel simple peut etre associe a chaque offre.
 - `/internships/{id}/sleep` passe une offre en `sleeping` et la rend invisible pour les eleves.
-- `/admin/internships` permet a un `admin` d'archiver une offre.
+- `/admin/internships` permet a un `admin` de valider ou refuser une entreprise, de valider ou refuser une offre, puis d'archiver une offre.
 - Les helpers globaux `set_internship_status($id, $new_status)`, `get_active_internships()` et `get_archived_internships()` sont disponibles dans `app/Support/internship_helpers.php`.
-- `/offers` n'affiche que les offres `active`.
+- `/offers` n'affiche que les offres `active` dont l'entreprise et l'offre elle-meme sont validees.
 - `/search` permet une recherche eleve par mots-cles et secteur, avec lien vers `/offers/{id}`.
 - Le tri geographique utilise une fonction PHP `haversine_distance_km()` et des coordonnees eleve/college saisies dans la recherche.
 - Les cartes Leaflet affichent uniquement les offres disposant de coordonnees `lat/lng`.
 - `/offers/{id}` affiche un formulaire de candidature eleve.
-- Les candidatures sont stockees dans `applications` puis envoyees par email au parent/entreprise avec l'email eleve en `Reply-To`.
+- Les candidatures sont stockees dans `applications` puis transformees en discussion interne dans la webapp (`application_messages`).
+- Les emails servent uniquement de notification neutre avec un lien vers la discussion. Les adresses email eleves ne sont jamais diffusees a l'entreprise.
 - Une meme offre ne peut pas recevoir plusieurs candidatures du meme eleve tant que la candidature precedente n'a pas ete anonymisee.
 - `/company-applications` permet au parent ou a l'entreprise de filtrer les candidatures recues et de faire evoluer leur statut (`new`, `contacted`, `accepted`, `rejected`).
+- `/applications/{id}` centralise les echanges entre eleve et entreprise dans la webapp.
+- `/news` centralise les alertes internes de la plateforme. Les emails d'alerte restent generiques et invitent a se reconnecter pour lire la nouveaute en mode connecte.
 - Lorsqu'une offre atteint son nombre de places via les candidatures `accepted`, elle passe automatiquement en `sleeping` pour devenir invisible cote eleve.
 - Si une candidature `accepted` repasse ensuite a un autre statut et qu'une place se libere, l'offre peut redevenir automatiquement `active`.
-- `/admin/dashboard` fournit un tableau de bord referent/college avec filtres, alertes simples et export CSV des candidatures.
+- `/admin/dashboard` fournit un tableau de bord college avec filtres, alertes simples et export CSV des candidatures.
+- `/admin/dashboard` fournit aussi un annuaire interne des eleves par classe avec recherche par prenom ou nom, sans afficher leurs adresses email.
+- Le role `teacher` est limite a sa classe (`managed_class`), tandis que le role `level_manager` peut suivre l'ensemble des eleves du niveau.
 
 ## Referentiel ONISEP
 - `ref_jobs` stocke un referentiel local des metiers ONISEP.
@@ -83,3 +89,5 @@ Base initiale de l'application web Avenir Pro en PHP 8.1+ avec MariaDB et Flight
 - Un guide simple pour l'admin APEL est disponible dans `docs/README_APEL_OVH.md`.
 - Un script SQL de mise a niveau rapide est disponible dans `scripts/sql/step15_hardening.sql`.
 - Un script SQL complementaire est disponible dans `scripts/sql/step18_company_applications.sql`.
+- Un script SQL complementaire est disponible dans `scripts/sql/step20_security_moderation_messaging.sql`.
+- Un script SQL complementaire est disponible dans `scripts/sql/step21_notifications.sql`.

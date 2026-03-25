@@ -41,6 +41,7 @@ if (!function_exists('get_active_internships')) {
                 internships.places_count,
                 internships.status,
                 internships.academic_year,
+                internships.validation_status,
                 companies.name AS company_name,
                 companies.address AS company_address,
                 companies.lat AS company_lat,
@@ -48,9 +49,15 @@ if (!function_exists('get_active_internships')) {
              FROM internships
              INNER JOIN companies ON companies.id = internships.company_id
              WHERE internships.status = :status
+               AND internships.validation_status = :internship_validation_status
+               AND companies.validation_status = :company_validation_status
              ORDER BY internships.id DESC'
         );
-        $statement->execute(['status' => 'active']);
+        $statement->execute([
+            'status' => 'active',
+            'internship_validation_status' => 'approved',
+            'company_validation_status' => 'approved',
+        ]);
 
         return $statement->fetchAll();
     }
@@ -71,6 +78,7 @@ if (!function_exists('get_archived_internships')) {
                 internships.places_count,
                 internships.status,
                 internships.academic_year,
+                internships.validation_status,
                 companies.name AS company_name,
                 companies.address AS company_address,
                 companies.lat AS company_lat,

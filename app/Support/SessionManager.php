@@ -39,6 +39,10 @@ final class SessionManager
             'id' => $user['id'],
             'email' => $user['email'],
             'role' => $user['role'],
+            'first_name' => $user['first_name'] ?? null,
+            'last_name' => $user['last_name'] ?? null,
+            'school_class' => $user['school_class'] ?? null,
+            'managed_class' => $user['managed_class'] ?? null,
             'logged_in_at' => time(),
         ];
     }

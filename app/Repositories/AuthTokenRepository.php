@@ -38,7 +38,11 @@ final class AuthTokenRepository
                 auth_tokens.user_id,
                 auth_tokens.expires_at,
                 users.email,
-                users.role
+                users.role,
+                users.first_name,
+                users.last_name,
+                users.school_class,
+                users.managed_class
              FROM auth_tokens
              INNER JOIN users ON users.id = auth_tokens.user_id
              WHERE auth_tokens.selector = :selector

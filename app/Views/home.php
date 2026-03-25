@@ -8,6 +8,7 @@ $isStudent = $userRole === 'student';
 $studentSectors = ['Sante', 'Tech', 'Animaux', 'Commerce', 'Sport', 'Culture'];
 $studentSearchUrl = app_path('/search');
 $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
+$unreadNotificationsCount = (int) ($unreadNotificationsCount ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -24,6 +25,14 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                 <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
                 <a class="nav-link" href="<?= htmlspecialchars($studentSearchUrl, ENT_QUOTES, 'UTF-8'); ?>">Recherche</a>
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+                <?php if (!$isGuest): ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">
+                        Mes news
+                        <?php if ($unreadNotificationsCount > 0): ?>
+                            <span class="count-badge"><?= htmlspecialchars((string) $unreadNotificationsCount, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <?php endif; ?>
+                    </a>
+                <?php endif; ?>
                 <?php if ($isStudent): ?>
                     <a class="nav-link" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
                 <?php endif; ?>
@@ -105,7 +114,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                 <section class="surface" style="margin-top: 1.5rem;">
                     <p class="eyebrow">Entreprises</p>
                     <h2 class="section-title">Vous proposez un stage ?</h2>
-                    <p class="section-copy">Un parcours dedie vous permet de creer un compte entreprise, completer votre profil puis publier vos offres en quelques minutes.</p>
+                    <p class="section-copy">Un parcours dedie vous permet de creer un compte entreprise, completer votre profil puis soumettre vos offres a validation avant publication.</p>
                     <div class="inline-actions">
                         <a class="button-secondary" href="<?= htmlspecialchars(app_path('/login?account_type=company&return_to=' . rawurlencode('/company-profile')), ENT_QUOTES, 'UTF-8'); ?>">Je suis une entreprise</a>
                     </div>
@@ -135,9 +144,17 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                                 <?php endif; ?>
                             </a>
                         <?php endif; ?>
-                        <?php if (!empty($canAccessAdminInternships)): ?>
+                        <?php if (!empty($canAccessCollegeDashboard)): ?>
                             <a class="role-link" href="<?= htmlspecialchars(app_path('/admin/dashboard'), ENT_QUOTES, 'UTF-8'); ?>">Tableau college</a>
-                            <a class="role-link" href="<?= htmlspecialchars(app_path('/admin/internships'), ENT_QUOTES, 'UTF-8'); ?>">Administration des offres</a>
+                        <?php endif; ?>
+                        <a class="role-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">
+                            Mes news
+                            <?php if ($unreadNotificationsCount > 0): ?>
+                                <span class="count-badge"><?= htmlspecialchars((string) $unreadNotificationsCount, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php endif; ?>
+                        </a>
+                        <?php if (!empty($canAccessAdminInternships)): ?>
+                            <a class="role-link" href="<?= htmlspecialchars(app_path('/admin/internships'), ENT_QUOTES, 'UTF-8'); ?>">Moderation entreprises et offres</a>
                         <?php endif; ?>
                     </div>
                 </aside>

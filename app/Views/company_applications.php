@@ -21,6 +21,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
         <nav class="top-nav surface">
             <div class="nav-links">
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
+                <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">Profil entreprise</a>
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/internships'), ENT_QUOTES, 'UTF-8'); ?>">Mes offres</a>
                 <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/company-applications'), ENT_QUOTES, 'UTF-8'); ?>">
@@ -40,7 +41,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
             <div class="hero-copy">
                 <p class="eyebrow">Suivi entreprise</p>
                 <h1 class="hero-title"><?= htmlspecialchars($title ?? 'Candidatures recues', ENT_QUOTES, 'UTF-8'); ?></h1>
-                <p class="hero-text">Retrouve ici toutes les candidatures envoyees sur tes offres, filtre-les et mets a jour leur statut au fil des echanges.</p>
+                <p class="hero-text">Retrouve ici toutes les candidatures envoyees sur tes offres, filtre-les, mets a jour leur statut et reponds uniquement dans la discussion integree.</p>
             </div>
             <aside class="hero-panel">
                 <p class="eyebrow">Nouvelles candidatures</p>
@@ -107,7 +108,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                         <?php
                         $statusValue = (string) ($item['status'] ?? 'new');
                         $statusLabel = $availableStatuses[$statusValue] ?? $statusValue;
-                        $studentLabel = (string) ($item['student_email'] ?? $item['student_pseudonym'] ?? 'eleve non renseigne');
+                        $studentLabel = (string) ($item['student_pseudonym'] ?? 'eleve non renseigne');
                         $isAnonymized = (string) ($item['anonymized_at'] ?? '') !== '';
                         ?>
                         <article class="offer-card">
@@ -150,6 +151,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                                 <div class="inline-actions">
                                     <button type="submit">Enregistrer</button>
                                     <a class="button-secondary" href="<?= htmlspecialchars(app_path('/offers/' . (string) $item['internship_id']), ENT_QUOTES, 'UTF-8'); ?>">Voir l'offre</a>
+                                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/applications/' . (string) $item['id']), ENT_QUOTES, 'UTF-8'); ?>">Discussion</a>
                                 </div>
                             </form>
                         </article>

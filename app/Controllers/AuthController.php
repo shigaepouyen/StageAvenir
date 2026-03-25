@@ -103,7 +103,19 @@ final class AuthController
                 return;
             }
 
-            $userId = $this->users->create($email, $this->roleForAccountType($selectedAccountType));
+            $role = $this->roleForAccountType($selectedAccountType);
+            $studentIdentity = $role === self::ACCOUNT_TYPE_STUDENT
+                ? $this->inferStudentIdentityFromEmail($email)
+                : ['first_name' => null, 'last_name' => null];
+
+            $userId = $this->users->create(
+                $email,
+                $role,
+                null,
+                null,
+                $studentIdentity['first_name'],
+                $studentIdentity['last_name']
+            );
             $user = $this->users->findById($userId);
         }
 
@@ -193,6 +205,10 @@ final class AuthController
             'id' => (int) $tokenRow['user_id'],
             'email' => (string) $tokenRow['email'],
             'role' => (string) $tokenRow['role'],
+            'first_name' => $tokenRow['first_name'] ?? null,
+            'last_name' => $tokenRow['last_name'] ?? null,
+            'school_class' => $tokenRow['school_class'] ?? null,
+            'managed_class' => $tokenRow['managed_class'] ?? null,
         ]);
 
         app_redirect($returnTo);
@@ -275,5 +291,42 @@ final class AuthController
         }
 
         return str_starts_with($returnTo, '/') ? $returnTo : $this->defaultReturnToFor($accountType);
+    }
+
+    private function inferStudentIdentityFromEmail(string $email): array
+    {
+        $localPart = trim((string) strstr($email, '@', true));
+
+        if ($localPart === '') {
+            return ['first_name' => null, 'last_name' => null];
+        }
+
+        $parts = array_values(array_filter(array_map(
+            static fn (string $part): string => trim($part),
+            preg_split('/[._-]+/', $localPart) ?: []
+        )));
+
+        if (count($parts) < 2) {
+            return [
+                'first_name' => $this->normalizeHumanNamePart($parts[0] ?? ''),
+                'last_name' => null,
+            ];
+        }
+
+        return [
+            'first_name' => $this->normalizeHumanNamePart($parts[0]),
+            'last_name' => $this->normalizeHumanNamePart(implode(' ', array_slice($parts, 1))),
+        ];
+    }
+
+    private function normalizeHumanNamePart(string $value): ?string
+    {
+        $normalized = trim(str_replace(['.', '_', '-'], ' ', $value));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return ucwords(strtolower($normalized));
     }
 }

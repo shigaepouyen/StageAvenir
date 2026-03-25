@@ -26,7 +26,7 @@ $companyLoginUrl = app_path('/login?account_type=company&return_to=' . rawurlenc
                 </h1>
                 <p class="hero-text">
                     <?= htmlspecialchars($isCompanyPath
-                        ? "Aucun mot de passe a memoriser. Si l'adresse n'existe pas encore, Avenir Pro cree automatiquement votre compte entreprise puis vous envoie un Magic Link."
+                        ? "Aucun mot de passe a memoriser. Si l'adresse n'existe pas encore, Avenir Pro cree automatiquement votre compte entreprise puis vous envoie un Magic Link. Le profil et les offres seront ensuite valides par l'administration."
                         : "Pas besoin de mot de passe a retenir. Tu reçois un email avec un lien de connexion valable pendant quelques minutes.", ENT_QUOTES, 'UTF-8'); ?>
                 </p>
                 <div class="journey-switch">
@@ -61,7 +61,7 @@ $companyLoginUrl = app_path('/login?account_type=company&return_to=' . rawurlenc
                 <h2 class="section-title"><?= htmlspecialchars($isCompanyPath ? 'Recevoir mon lien entreprise' : 'Recevoir mon lien de connexion', ENT_QUOTES, 'UTF-8'); ?></h2>
                 <p class="form-help">
                     <?= htmlspecialchars($isCompanyPath
-                        ? "Entrez l'adresse email de l'entreprise ou du parent referent. Si le compte n'existe pas encore, il sera cree en profil entreprise."
+                        ? "Entrez l'adresse email de l'entreprise ou du parent referent. Si le compte n'existe pas encore, il sera cree en profil entreprise. La publication restera soumise a validation."
                         : "Entre ton email scolaire ou personnel. Si ton compte n'existe pas encore, il sera cree automatiquement.", ENT_QUOTES, 'UTF-8'); ?>
                 </p>
 

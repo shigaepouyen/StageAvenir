@@ -7,11 +7,11 @@ declare(strict_types=1);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajouter une offre</title>
+    <title>Soumettre une offre</title>
 </head>
 <body>
     <main>
-        <h1>Ajouter une offre</h1>
+        <h1>Soumettre une offre</h1>
 
         <?php if (!empty($error)): ?>
             <p style="color: #b00020;"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></p>
@@ -65,6 +65,7 @@ declare(strict_types=1);
                 >
 
                 <p>Annee scolaire : <?= htmlspecialchars((string) $formData['academic_year'], ENT_QUOTES, 'UTF-8'); ?></p>
+                <p>L'offre sera relue par l'administration avant de devenir visible aux eleves.</p>
 
                 <label>
                     <input
@@ -76,7 +77,7 @@ declare(strict_types=1);
                     Je certifie que ce stage respecte la reglementation sur le travail des mineurs.
                 </label>
 
-                <button type="submit">Publier l'offre</button>
+                <button type="submit">Envoyer pour validation</button>
             </form>
         <?php else: ?>
             <p><a href="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">Completer le profil entreprise</a></p>

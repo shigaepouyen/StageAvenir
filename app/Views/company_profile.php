@@ -8,8 +8,10 @@ $currentAddress = (string) ($company['address'] ?? '');
 $currentNafCode = (string) ($company['naf_code'] ?? '');
 $currentLat = (string) ($company['lat'] ?? '');
 $currentLng = (string) ($company['lng'] ?? '');
+$currentValidationStatus = (string) ($company['validation_status'] ?? 'pending');
 $searchQuery = (string) ($searchQuery ?? '');
 $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
+$validationLabel = \App\Controllers\InternshipController::validationStatusLabels()[$currentValidationStatus] ?? $currentValidationStatus;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -20,6 +22,7 @@ $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
 </head>
 <body>
     <main>
+        <p><a href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Voir mes news</a></p>
         <h1><?= htmlspecialchars($title ?? 'Profil entreprise', ENT_QUOTES, 'UTF-8'); ?></h1>
 
         <?php if (!empty($error)): ?>
@@ -77,6 +80,12 @@ $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
 
             <section>
                 <h2>Profil entreprise</h2>
+            <?php if (!empty($company)): ?>
+                <p><strong>Validation entreprise :</strong> <?= htmlspecialchars($validationLabel, ENT_QUOTES, 'UTF-8'); ?></p>
+                <?php if ($currentValidationStatus !== 'approved'): ?>
+                    <p>Votre profil doit etre valide par l'administration avant de pouvoir publier des offres visibles.</p>
+                <?php endif; ?>
+            <?php endif; ?>
             <form method="post" action="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">
                 <input
                     type="hidden"
@@ -136,7 +145,7 @@ $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
                 >
 
                 <input type="hidden" name="search_query" value="<?= htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8'); ?>">
-                <button type="submit">Enregistrer</button>
+                <button type="submit">Enregistrer et envoyer pour validation</button>
             </form>
             <p>Format attendu : 14 chiffres, sans espaces.</p>
             </section>

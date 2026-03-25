@@ -13,6 +13,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
 </head>
 <body>
     <main>
+        <p><a href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Voir mes news</a></p>
         <h1><?= htmlspecialchars($title ?? 'Mes offres de stage', ENT_QUOTES, 'UTF-8'); ?></h1>
 
         <?php if (!empty($error)): ?>
@@ -23,7 +24,8 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
             <p style="color: #0a5f2b;"><?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></p>
         <?php endif; ?>
 
-        <?php if (!empty($company)): ?>
+        <?php if (!empty($company) && empty($accessDenied)): ?>
+            <p><strong>Validation entreprise :</strong> <?= htmlspecialchars(\App\Controllers\InternshipController::validationStatusLabels()[(string) ($company['validation_status'] ?? 'pending')] ?? (string) ($company['validation_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?></p>
             <p><a href="<?= htmlspecialchars(app_path('/internships/create'), ENT_QUOTES, 'UTF-8'); ?>">Ajouter une offre</a></p>
             <p>
                 <a href="<?= htmlspecialchars(app_path('/company-applications'), ENT_QUOTES, 'UTF-8'); ?>">
@@ -44,6 +46,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                         <p>Secteur : <?= htmlspecialchars((string) ($item['sector_tag'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
                         <p>Places : <?= htmlspecialchars((string) $item['places_count'], ENT_QUOTES, 'UTF-8'); ?></p>
                         <p>Statut : <?= htmlspecialchars((string) $item['status'], ENT_QUOTES, 'UTF-8'); ?></p>
+                        <p>Validation : <?= htmlspecialchars(\App\Controllers\InternshipController::validationStatusLabels()[(string) ($item['validation_status'] ?? 'pending')] ?? (string) ($item['validation_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?></p>
                         <p>Annee scolaire : <?= htmlspecialchars((string) $item['academic_year'], ENT_QUOTES, 'UTF-8'); ?></p>
                         <?php if ((string) $item['status'] === 'active'): ?>
                             <form method="post" action="<?= htmlspecialchars(app_path('/internships/' . (string) $item['id'] . '/sleep'), ENT_QUOTES, 'UTF-8'); ?>">

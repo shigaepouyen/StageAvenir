@@ -16,11 +16,12 @@ final class ApplicationRepository
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO applications (internship_id, student_id, student_pseudonym, status, message, classe, anonymized_at, created_at)
-             VALUES (:internship_id, :student_id, NULL, :status, :message, :classe, NULL, NOW())'
+             VALUES (:internship_id, :student_id, :student_pseudonym, :status, :message, :classe, NULL, NOW())'
         );
         $statement->execute([
             'internship_id' => $internshipId,
             'student_id' => $studentId,
+            'student_pseudonym' => $this->buildStudentPseudonym($studentId),
             'status' => 'new',
             'message' => $message,
             'classe' => $classe,
@@ -104,14 +105,15 @@ final class ApplicationRepository
                 applications.status,
                 applications.message,
                 applications.classe,
-                applications.student_pseudonym,
+                COALESCE(applications.student_pseudonym, CONCAT(\'eleve-\', LPAD(applications.student_id, 6, \'0\'))) AS student_pseudonym,
                 applications.anonymized_at,
                 applications.created_at,
                 internships.title AS internship_title,
                 internships.academic_year,
-                users.email AS student_email
+                companies.name AS company_name
              FROM applications
              INNER JOIN internships ON internships.id = applications.internship_id
+             INNER JOIN companies ON companies.id = internships.company_id
              LEFT JOIN users ON users.id = applications.student_id
              WHERE ' . implode(' AND ', $conditions) . '
              ORDER BY
@@ -135,6 +137,7 @@ final class ApplicationRepository
             'SELECT
                 applications.id,
                 applications.internship_id,
+                applications.student_id,
                 applications.status
              FROM applications
              INNER JOIN internships ON internships.id = applications.internship_id
@@ -256,17 +259,141 @@ final class ApplicationRepository
         return $statement->fetchAll();
     }
 
+    public function findThreadContextForStudent(int $applicationId, int $studentId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT
+                applications.id,
+                applications.internship_id,
+                applications.student_id,
+                COALESCE(applications.student_pseudonym, CONCAT(\'eleve-\', LPAD(applications.student_id, 6, \'0\'))) AS student_pseudonym,
+                applications.status,
+                applications.message,
+                applications.classe,
+                applications.anonymized_at,
+                applications.created_at,
+                internships.title AS internship_title,
+                internships.status AS internship_status,
+                internships.academic_year,
+                companies.id AS company_id,
+                COALESCE(NULLIF(companies.name, \'\'), companies.siret) AS company_label,
+                owner.id AS company_owner_user_id,
+                owner.email AS company_owner_email,
+                students.email AS student_email
+             FROM applications
+             INNER JOIN internships ON internships.id = applications.internship_id
+             INNER JOIN companies ON companies.id = internships.company_id
+             INNER JOIN users AS owner ON owner.id = companies.user_id
+             LEFT JOIN users AS students ON students.id = applications.student_id
+             WHERE applications.id = :application_id
+               AND applications.student_id = :student_id
+             LIMIT 1'
+        );
+        $statement->execute([
+            'application_id' => $applicationId,
+            'student_id' => $studentId,
+        ]);
+        $row = $statement->fetch();
+
+        return $row === false ? null : $row;
+    }
+
+    public function findThreadContextForCompany(int $applicationId, int $companyId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT
+                applications.id,
+                applications.internship_id,
+                applications.student_id,
+                COALESCE(applications.student_pseudonym, CONCAT(\'eleve-\', LPAD(applications.student_id, 6, \'0\'))) AS student_pseudonym,
+                applications.status,
+                applications.message,
+                applications.classe,
+                applications.anonymized_at,
+                applications.created_at,
+                internships.title AS internship_title,
+                internships.status AS internship_status,
+                internships.academic_year,
+                companies.id AS company_id,
+                COALESCE(NULLIF(companies.name, \'\'), companies.siret) AS company_label,
+                owner.id AS company_owner_user_id,
+                owner.email AS company_owner_email,
+                students.email AS student_email
+             FROM applications
+             INNER JOIN internships ON internships.id = applications.internship_id
+             INNER JOIN companies ON companies.id = internships.company_id
+             INNER JOIN users AS owner ON owner.id = companies.user_id
+             LEFT JOIN users AS students ON students.id = applications.student_id
+             WHERE applications.id = :application_id
+               AND companies.id = :company_id
+             LIMIT 1'
+        );
+        $statement->execute([
+            'application_id' => $applicationId,
+            'company_id' => $companyId,
+        ]);
+        $row = $statement->fetch();
+
+        return $row === false ? null : $row;
+    }
+
+    public function findThreadContextForStaff(int $applicationId, ?string $schoolClass = null): ?array
+    {
+        $conditions = ['applications.id = :application_id'];
+        $params = ['application_id' => $applicationId];
+
+        if ($schoolClass !== null && $schoolClass !== '') {
+            $conditions[] = 'COALESCE(users.school_class, applications.classe) = :school_class';
+            $params['school_class'] = $schoolClass;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT
+                applications.id,
+                applications.internship_id,
+                applications.student_id,
+                COALESCE(applications.student_pseudonym, CONCAT(\'eleve-\', LPAD(applications.student_id, 6, \'0\'))) AS student_pseudonym,
+                applications.status,
+                applications.message,
+                applications.classe,
+                applications.anonymized_at,
+                applications.created_at,
+                internships.title AS internship_title,
+                internships.status AS internship_status,
+                internships.academic_year,
+                companies.id AS company_id,
+                COALESCE(NULLIF(companies.name, \'\'), companies.siret) AS company_label,
+                owner.id AS company_owner_user_id,
+                owner.email AS company_owner_email,
+                users.first_name AS student_first_name,
+                users.last_name AS student_last_name,
+                COALESCE(users.school_class, applications.classe) AS student_school_class
+             FROM applications
+             INNER JOIN internships ON internships.id = applications.internship_id
+             INNER JOIN companies ON companies.id = internships.company_id
+             INNER JOIN users AS owner ON owner.id = companies.user_id
+             LEFT JOIN users ON users.id = applications.student_id
+             WHERE ' . implode(' AND ', $conditions) . '
+             LIMIT 1'
+        );
+        $statement->execute($params);
+        $row = $statement->fetch();
+
+        return $row === false ? null : $row;
+    }
+
     public function findAllForAdmin(
         ?string $class = null,
         ?string $status = null,
         ?int $companyId = null,
-        ?int $internshipId = null
+        ?int $internshipId = null,
+        ?string $studentSearch = null
     ): array {
         $conditions = ['1 = 1'];
         $params = [];
 
         if ($class !== null && $class !== '') {
-            $conditions[] = 'applications.classe = :classe';
+            $conditions[] = 'COALESCE(users.school_class, applications.classe) = :classe';
             $params['classe'] = $class;
         }
 
@@ -285,6 +412,19 @@ final class ApplicationRepository
             $params['internship_id'] = $internshipId;
         }
 
+        $normalizedStudentSearch = $this->normalizeSearchTerm($studentSearch);
+
+        if ($normalizedStudentSearch !== null) {
+            $conditions[] = 'CONCAT_WS(\' \',
+                COALESCE(users.first_name, \'\'),
+                COALESCE(users.last_name, \'\'),
+                COALESCE(users.last_name, \'\'),
+                COALESCE(users.first_name, \'\'),
+                COALESCE(applications.student_pseudonym, \'\')
+            ) LIKE :student_search';
+            $params['student_search'] = $normalizedStudentSearch;
+        }
+
         $statement = $this->pdo->prepare(
             'SELECT
                 applications.id,
@@ -301,7 +441,9 @@ final class ApplicationRepository
                 internships.academic_year,
                 companies.id AS company_id,
                 COALESCE(NULLIF(companies.name, \'\'), companies.siret) AS company_label,
-                users.email AS student_email
+                users.first_name AS student_first_name,
+                users.last_name AS student_last_name,
+                COALESCE(users.school_class, applications.classe) AS student_school_class
              FROM applications
              INNER JOIN internships ON internships.id = applications.internship_id
              INNER JOIN companies ON companies.id = internships.company_id
@@ -354,5 +496,17 @@ final class ApplicationRepository
         ]);
 
         return $statement->rowCount();
+    }
+
+    private function buildStudentPseudonym(int $studentId): string
+    {
+        return sprintf('eleve-%06d', $studentId);
+    }
+
+    private function normalizeSearchTerm(?string $searchTerm): ?string
+    {
+        $value = trim((string) $searchTerm);
+
+        return $value === '' ? null : '%' . $value . '%';
     }
 }

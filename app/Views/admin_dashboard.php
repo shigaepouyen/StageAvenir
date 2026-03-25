@@ -10,16 +10,20 @@ $selectedClass = (string) ($selectedClass ?? '');
 $selectedStatus = (string) ($selectedStatus ?? '');
 $selectedCompanyId = (string) ($selectedCompanyId ?? '');
 $selectedInternshipId = (string) ($selectedInternshipId ?? '');
+$selectedStudentSearch = (string) ($selectedStudentSearch ?? '');
 $summary = is_array($summary ?? null) ? $summary : [];
 $studentsWithoutApplications = is_array($studentsWithoutApplications ?? null) ? $studentsWithoutApplications : [];
+$studentDirectory = is_array($studentDirectory ?? null) ? $studentDirectory : [];
 $openOffers = is_array($openOffers ?? null) ? $openOffers : [];
 $fullOffers = is_array($fullOffers ?? null) ? $fullOffers : [];
 $overloadedOffers = is_array($overloadedOffers ?? null) ? $overloadedOffers : [];
+$canManageInternshipAdministration = !empty($canManageInternshipAdministration);
 $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
     'class_filter' => $selectedClass,
     'status_filter' => $selectedStatus,
     'company_id' => $selectedCompanyId,
     'internship_id' => $selectedInternshipId,
+    'student_search' => $selectedStudentSearch,
 ]));
 ?>
 <!DOCTYPE html>
@@ -35,8 +39,11 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
         <nav class="top-nav surface">
             <div class="nav-links">
                 <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
+                <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
                 <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/admin/dashboard'), ENT_QUOTES, 'UTF-8'); ?>">Tableau college</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/admin/internships'), ENT_QUOTES, 'UTF-8'); ?>">Administration des offres</a>
+                <?php if ($canManageInternshipAdministration): ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/admin/internships'), ENT_QUOTES, 'UTF-8'); ?>">Moderation</a>
+                <?php endif; ?>
             </div>
             <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
@@ -116,6 +123,16 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <div class="field-group">
+                            <label for="student_search">Recherche eleve</label>
+                            <input
+                                id="student_search"
+                                name="student_search"
+                                type="text"
+                                value="<?= htmlspecialchars($selectedStudentSearch, ENT_QUOTES, 'UTF-8'); ?>"
+                                placeholder="Prenom ou nom"
+                            >
+                        </div>
                     </div>
                     <div class="inline-actions">
                         <button type="submit">Appliquer les filtres</button>
@@ -186,7 +203,12 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
                                 <?php else: ?>
                                     <ul class="offer-meta">
                                         <?php foreach ($studentsWithoutApplications as $student): ?>
-                                            <li><?= htmlspecialchars((string) $student['email'], ENT_QUOTES, 'UTF-8'); ?></li>
+                                            <li>
+                                                <?= htmlspecialchars((string) ($student['student_label'] ?? 'eleve non renseigne'), ENT_QUOTES, 'UTF-8'); ?>
+                                                <?php if (!empty($student['school_class'])): ?>
+                                                    - <?= htmlspecialchars((string) $student['school_class'], ENT_QUOTES, 'UTF-8'); ?>
+                                                <?php endif; ?>
+                                            </li>
                                         <?php endforeach; ?>
                                     </ul>
                                 <?php endif; ?>
@@ -222,9 +244,44 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
                 <aside class="detail-side">
                     <section class="surface">
                         <h2 class="section-title">Mode de lecture</h2>
-                        <p class="section-copy">Les filtres s'appliquent a la liste des candidatures et a l'export CSV. Les alertes “eleves sans candidature” restent globales a la plateforme.</p>
+                        <p class="section-copy">Les filtres s'appliquent a la liste des candidatures, a l'annuaire eleves et a l'export CSV. Les emails eleves ne sont jamais affiches dans cet espace.</p>
                     </section>
                 </aside>
+            </section>
+
+            <section class="surface" style="margin-top: 1.5rem;">
+                <h2 class="section-title">Annuaire eleves</h2>
+                <p class="section-copy">Liste interne des eleves par classe, avec recherche par prenom ou nom. Cet annuaire reste volontairement sans adresses email.</p>
+                <?php if ($studentDirectory === []): ?>
+                    <div class="empty-state">Aucun eleve ne correspond aux filtres actuels.</div>
+                <?php else: ?>
+                    <div class="results-grid">
+                        <?php foreach ($studentDirectory as $student): ?>
+                            <?php
+                            $studentClass = (string) ($student['school_class'] ?? '');
+                            $applicationsCount = (int) ($student['applications_count'] ?? 0);
+                            $lastApplicationAt = (string) ($student['last_application_at'] ?? '');
+                            ?>
+                            <article class="offer-card">
+                                <div class="offer-card-top">
+                                    <span class="stat-badge stat-badge-soft">
+                                        <?= htmlspecialchars($studentClass !== '' ? $studentClass : 'Classe non renseignee', ENT_QUOTES, 'UTF-8'); ?>
+                                    </span>
+                                    <?php if ($applicationsCount === 0): ?>
+                                        <span class="stat-badge status-badge status-badge-new">Sans candidature</span>
+                                    <?php endif; ?>
+                                </div>
+                                <h3><?= htmlspecialchars((string) ($student['student_label'] ?? 'eleve non renseigne'), ENT_QUOTES, 'UTF-8'); ?></h3>
+                                <ul class="offer-meta">
+                                    <li><strong>Candidatures :</strong> <?= htmlspecialchars((string) $applicationsCount, ENT_QUOTES, 'UTF-8'); ?></li>
+                                    <?php if ($lastApplicationAt !== ''): ?>
+                                        <li><strong>Derniere candidature :</strong> <?= htmlspecialchars(date('d/m/Y', strtotime($lastApplicationAt)), ENT_QUOTES, 'UTF-8'); ?></li>
+                                    <?php endif; ?>
+                                </ul>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </section>
 
             <section class="surface" style="margin-top: 1.5rem;">
@@ -266,7 +323,7 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
                     <div class="results-grid">
                         <?php foreach ($items as $item): ?>
                             <?php
-                            $studentLabel = (string) ($item['student_email'] ?? $item['student_pseudonym'] ?? 'eleve non renseigne');
+                            $studentLabel = (string) ($item['student_label'] ?? 'eleve non renseigne');
                             $statusValue = (string) ($item['status'] ?? 'new');
                             $statusLabel = $availableStatuses[$statusValue] ?? $statusValue;
                             $isAnonymized = (string) ($item['anonymized_at'] ?? '') !== '';
@@ -282,7 +339,7 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
                                 <h3><?= htmlspecialchars((string) $item['internship_title'], ENT_QUOTES, 'UTF-8'); ?></h3>
                                 <ul class="offer-meta">
                                     <li><strong>Eleve :</strong> <?= htmlspecialchars($studentLabel, ENT_QUOTES, 'UTF-8'); ?></li>
-                                    <li><strong>Classe :</strong> <?= htmlspecialchars((string) $item['classe'], ENT_QUOTES, 'UTF-8'); ?></li>
+                                    <li><strong>Classe :</strong> <?= htmlspecialchars((string) ($item['student_school_class'] ?? $item['classe'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></li>
                                     <li><strong>Entreprise :</strong> <?= htmlspecialchars((string) $item['company_label'], ENT_QUOTES, 'UTF-8'); ?></li>
                                     <li><strong>Statut offre :</strong> <?= htmlspecialchars((string) $item['internship_status'], ENT_QUOTES, 'UTF-8'); ?></li>
                                     <?php if ($isAnonymized): ?>

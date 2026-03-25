@@ -24,10 +24,14 @@ final class InternshipRepository
                 internships.places_count,
                 internships.status,
                 internships.academic_year,
+                internships.validation_status,
+                internships.validation_checked_at,
                 companies.name AS company_name,
                 companies.address AS company_address,
                 companies.lat AS company_lat,
                 companies.lng AS company_lng,
+                companies.validation_status AS company_validation_status,
+                users.id AS owner_user_id,
                 users.email AS owner_email
              FROM internships
              INNER JOIN companies ON companies.id = internships.company_id
@@ -44,7 +48,7 @@ final class InternshipRepository
     public function findByIdAndCompanyId(int $id, int $companyId): ?array
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, company_id, title, description, sector_tag, places_count, status, academic_year
+            'SELECT id, company_id, title, description, sector_tag, places_count, status, academic_year, validation_status, validation_checked_at
              FROM internships
              WHERE id = :id AND company_id = :company_id
              LIMIT 1'
@@ -61,7 +65,7 @@ final class InternshipRepository
     public function findAllByCompanyId(int $companyId): array
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, company_id, title, description, sector_tag, places_count, status, academic_year
+            'SELECT id, company_id, title, description, sector_tag, places_count, status, academic_year, validation_status, validation_checked_at
              FROM internships
              WHERE company_id = :company_id
              ORDER BY id DESC'
@@ -74,8 +78,28 @@ final class InternshipRepository
     public function create(int $companyId, array $data): int
     {
         $statement = $this->pdo->prepare(
-            'INSERT INTO internships (company_id, title, description, sector_tag, places_count, status, academic_year)
-             VALUES (:company_id, :title, :description, :sector_tag, :places_count, :status, :academic_year)'
+            'INSERT INTO internships (
+                company_id,
+                title,
+                description,
+                sector_tag,
+                places_count,
+                status,
+                academic_year,
+                validation_status,
+                validation_checked_at
+             )
+             VALUES (
+                :company_id,
+                :title,
+                :description,
+                :sector_tag,
+                :places_count,
+                :status,
+                :academic_year,
+                :validation_status,
+                NULL
+             )'
         );
         $statement->execute([
             'company_id' => $companyId,
@@ -85,6 +109,7 @@ final class InternshipRepository
             'places_count' => $data['places_count'],
             'status' => $data['status'],
             'academic_year' => $data['academic_year'],
+            'validation_status' => $data['validation_status'] ?? 'pending',
         ]);
 
         return (int) $this->pdo->lastInsertId();
@@ -115,6 +140,7 @@ final class InternshipRepository
                 internships.places_count,
                 internships.status,
                 internships.academic_year,
+                internships.validation_status,
                 companies.name AS company_name
              FROM internships
              INNER JOIN companies ON companies.id = internships.company_id
@@ -156,8 +182,16 @@ final class InternshipRepository
 
     public function searchActiveWithCompany(?string $keyword, ?string $sectorTag): array
     {
-        $conditions = ['internships.status = :status'];
-        $params = ['status' => 'active'];
+        $conditions = [
+            'internships.status = :status',
+            'internships.validation_status = :internship_validation_status',
+            'companies.validation_status = :company_validation_status',
+        ];
+        $params = [
+            'status' => 'active',
+            'internship_validation_status' => 'approved',
+            'company_validation_status' => 'approved',
+        ];
         $joins = ['INNER JOIN companies ON companies.id = internships.company_id'];
 
         if ($keyword !== null && $keyword !== '') {
@@ -181,6 +215,7 @@ final class InternshipRepository
                 internships.places_count,
                 internships.status,
                 internships.academic_year,
+                internships.validation_status,
                 companies.name AS company_name,
                 companies.address AS company_address,
                 companies.lat AS company_lat,
@@ -197,6 +232,7 @@ final class InternshipRepository
                 internships.places_count,
                 internships.status,
                 internships.academic_year,
+                internships.validation_status,
                 companies.name,
                 companies.address,
                 companies.lat,
@@ -258,6 +294,7 @@ final class InternshipRepository
                 internships.status,
                 internships.places_count,
                 internships.academic_year,
+                internships.validation_status,
                 COALESCE(NULLIF(companies.name, \'\'), companies.siret) AS company_label,
                 COUNT(applications.id) AS total_applications,
                 SUM(CASE WHEN applications.status = \'new\' THEN 1 ELSE 0 END) AS new_applications,
@@ -272,6 +309,7 @@ final class InternshipRepository
                 internships.status,
                 internships.places_count,
                 internships.academic_year,
+                internships.validation_status,
                 companies.name,
                 companies.siret
              ORDER BY internships.id DESC'
@@ -279,5 +317,51 @@ final class InternshipRepository
         $statement->execute($params);
 
         return $statement->fetchAll();
+    }
+
+    public function findAllForModeration(): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT
+                internships.id,
+                internships.company_id,
+                internships.title,
+                internships.description,
+                internships.sector_tag,
+                internships.places_count,
+                internships.status,
+                internships.academic_year,
+                internships.validation_status,
+                internships.validation_checked_at,
+                COALESCE(NULLIF(companies.name, \'\'), companies.siret) AS company_name,
+                companies.validation_status AS company_validation_status
+             FROM internships
+             INNER JOIN companies ON companies.id = internships.company_id
+             ORDER BY
+                CASE internships.validation_status
+                    WHEN \'pending\' THEN 1
+                    WHEN \'rejected\' THEN 2
+                    WHEN \'approved\' THEN 3
+                    ELSE 4
+                END,
+                internships.id DESC'
+        );
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    public function updateValidationStatusById(int $internshipId, string $validationStatus): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE internships
+             SET validation_status = :validation_status,
+                 validation_checked_at = NOW()
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'id' => $internshipId,
+            'validation_status' => $validationStatus,
+        ]);
     }
 }
