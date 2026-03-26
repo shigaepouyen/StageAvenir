@@ -7,14 +7,23 @@ $thread = $thread ?? null;
 $messages = is_array($messages ?? null) ? $messages : [];
 $messageDraft = (string) ($messageDraft ?? '');
 $canReply = !empty($canReply);
+$role = (string) ($currentUser['role'] ?? 'guest');
+$isCompany = in_array($role, ['company', 'parent'], true);
+$isStaff = in_array($role, ['teacher', 'level_manager', 'admin'], true);
+$isAdmin = $role === 'admin';
+$bodyClass = $isCompany ? 'page-company' : ($isStaff ? 'page-admin' : 'page-student');
 $backUrl = app_path('/');
+$backLabel = 'Retour';
 
-if (($currentUser['role'] ?? '') === 'student') {
+if ($role === 'student') {
     $backUrl = app_path('/my-applications');
-} elseif (in_array(($currentUser['role'] ?? ''), ['company', 'parent'], true)) {
+    $backLabel = 'Mes candidatures';
+} elseif ($isCompany) {
     $backUrl = app_path('/company-applications');
-} elseif (in_array(($currentUser['role'] ?? ''), ['teacher', 'level_manager', 'admin'], true)) {
+    $backLabel = 'Candidatures';
+} elseif ($isStaff) {
     $backUrl = app_path('/admin/dashboard');
+    $backLabel = 'Suivi college';
 }
 ?>
 <!DOCTYPE html>
@@ -25,20 +34,39 @@ if (($currentUser['role'] ?? '') === 'student') {
     <title><?= htmlspecialchars($title ?? 'Discussion de candidature', ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="<?= htmlspecialchars(asset_path('app.css'), ENT_QUOTES, 'UTF-8'); ?>">
 </head>
-<body class="page-student">
+<body class="<?= htmlspecialchars($bodyClass, ENT_QUOTES, 'UTF-8'); ?>">
     <main class="page-shell">
         <nav class="top-nav surface">
-            <div class="nav-links">
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
-                <a class="nav-link nav-link-current" href="<?= htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>">Discussion</a>
+            <div class="nav-cluster">
+                <a class="nav-brand" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Avenir Pro</a>
+                <div class="nav-links">
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
+                    <?php if ($isCompany): ?>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">Mon entreprise</a>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/internships'), ENT_QUOTES, 'UTF-8'); ?>">Mes offres</a>
+                        <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/company-applications'), ENT_QUOTES, 'UTF-8'); ?>">Candidatures</a>
+                    <?php elseif ($isStaff): ?>
+                        <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/admin/dashboard'), ENT_QUOTES, 'UTF-8'); ?>">Suivi college</a>
+                        <?php if ($isAdmin): ?>
+                            <a class="nav-link" href="<?= htmlspecialchars(app_path('/admin/staff'), ENT_QUOTES, 'UTF-8'); ?>">Comptes staff</a>
+                            <a class="nav-link" href="<?= htmlspecialchars(app_path('/admin/internships'), ENT_QUOTES, 'UTF-8'); ?>">Moderation</a>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Trouver un stage</a>
+                        <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
+                    <?php endif; ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+                </div>
             </div>
-            <?php if ($currentUser !== null): ?>
-                <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                    <button type="submit" class="button-secondary">Me deconnecter</button>
-                </form>
-            <?php endif; ?>
+            <div class="nav-actions">
+                <?php if ($currentUser !== null): ?>
+                    <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <button type="submit" class="button-secondary">Me deconnecter</button>
+                    </form>
+                <?php endif; ?>
+            </div>
         </nav>
 
         <?php if (!empty($error)): ?>
@@ -58,11 +86,16 @@ if (($currentUser['role'] ?? '') === 'student') {
             $statusLabel = \App\Controllers\InternshipController::applicationStatusLabels()[(string) ($thread['status'] ?? 'new')] ?? (string) ($thread['status'] ?? 'new');
             $offerStatus = (string) ($thread['internship_status'] ?? '');
             ?>
-            <section class="hero hero-split" style="margin-top: 1rem;">
+            <section class="hero hero-split">
                 <div class="hero-copy">
                     <p class="eyebrow">Discussion securisee</p>
                     <h1 class="hero-title"><?= htmlspecialchars((string) ($thread['internship_title'] ?? 'Candidature'), ENT_QUOTES, 'UTF-8'); ?></h1>
                     <p class="hero-text">Tous les echanges passent ici. Les adresses email des eleves ne sont jamais partagees avec l'entreprise.</p>
+                    <div class="step-chip-row">
+                        <span class="step-chip">Alerte email</span>
+                        <span class="step-chip">Lecture dans Avenir Pro</span>
+                        <span class="step-chip">Reponse securisee</span>
+                    </div>
                 </div>
                 <aside class="hero-panel">
                     <ul class="info-list">
@@ -105,7 +138,8 @@ if (($currentUser['role'] ?? '') === 'student') {
                         </div>
                         <div class="inline-actions">
                             <button type="submit">Envoyer le message</button>
-                            <a class="button-secondary" href="<?= htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>">Retour</a>
+                            <a class="button-secondary" href="<?= htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($backLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                            <a class="button-ghost" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Besoin d'aide</a>
                         </div>
                     </form>
                 </section>

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 $currentUser = $currentUser ?? null;
+$role = (string) ($currentUser['role'] ?? 'guest');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -15,26 +16,36 @@ $currentUser = $currentUser ?? null;
 <body class="page-student">
     <main class="page-shell">
         <nav class="top-nav surface">
-            <div class="nav-links">
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Recherche</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
-                <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+            <div class="nav-cluster">
+                <a class="nav-brand" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Avenir Pro</a>
+                <div class="nav-links">
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Trouver un stage</a>
+                    <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+                </div>
             </div>
-            <?php if ($currentUser !== null): ?>
-                <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                    <button type="submit" class="button-secondary">Me deconnecter</button>
-                </form>
-            <?php endif; ?>
+            <div class="nav-actions">
+                <?php if ($currentUser !== null): ?>
+                    <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <button type="submit" class="button-secondary">Me deconnecter</button>
+                    </form>
+                <?php endif; ?>
+            </div>
         </nav>
 
-        <section class="hero" style="margin-top: 1rem;">
+        <section class="hero">
             <div class="hero-copy">
                 <p class="eyebrow">Suivi eleve</p>
                 <h1 class="hero-title"><?= htmlspecialchars($title ?? 'Mes candidatures', ENT_QUOTES, 'UTF-8'); ?></h1>
-                <p class="hero-text">Retrouve ici les offres pour lesquelles tu as deja envoye une candidature.</p>
+                <p class="hero-text">Retrouve ici tout ce que tu as deja envoye. Ouvre la discussion si une entreprise t'a repondu.</p>
+                <div class="step-chip-row">
+                    <span class="step-chip">1. Je cherche</span>
+                    <span class="step-chip">2. Je candidate</span>
+                    <span class="step-chip">3. Je suis mes reponses</span>
+                </div>
             </div>
         </section>
 
@@ -47,6 +58,7 @@ $currentUser = $currentUser ?? null;
                 Tu n'as pas encore candidate. Commence par explorer les offres puis reviens ici pour suivre ce que tu as envoye.
                 <div class="inline-actions">
                     <a class="button" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Chercher un stage</a>
+                    <a class="button-ghost" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Lire la FAQ collégien</a>
                 </div>
             </div>
         <?php else: ?>
@@ -74,6 +86,15 @@ $currentUser = $currentUser ?? null;
                         </div>
                     </article>
                 <?php endforeach; ?>
+            </section>
+
+            <section class="support-banner" style="margin-top: 1.5rem;">
+                <h2>Besoin d'aide pour la suite ?</h2>
+                <p>Les messages et les changements de statut arrivent dans la discussion et dans “Mes news”. L'email sert seulement a te prevenir qu'une nouveaute t'attend.</p>
+                <div class="inline-actions">
+                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Voir mes news</a>
+                    <a class="button-ghost" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">FAQ collégien</a>
+                </div>
             </section>
         <?php endif; ?>
     </main>

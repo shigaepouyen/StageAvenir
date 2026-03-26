@@ -35,29 +35,40 @@ $searchReturnTo = '/search' . ($keyword !== '' || $selectedTag !== '' || $origin
 <body class="page-search">
     <main class="page-shell">
         <nav class="top-nav surface">
-            <div class="nav-links">
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
-                <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Recherche</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
-                <?php if (($currentUser['role'] ?? '') === 'student'): ?>
-                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
+            <div class="nav-cluster">
+                <a class="nav-brand" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Avenir Pro</a>
+                <div class="nav-links">
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
+                    <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Trouver un stage</a>
+                    <?php if (($currentUser['role'] ?? '') === 'student'): ?>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
+                    <?php endif; ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <?php if ($currentUser === null): ?>
+                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/login?' . http_build_query(['return_to' => $searchReturnTo])), ENT_QUOTES, 'UTF-8'); ?>">Connexion eleve</a>
+                <?php else: ?>
+                    <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <button type="submit" class="button-secondary">Me deconnecter</button>
+                    </form>
                 <?php endif; ?>
             </div>
-            <?php if ($currentUser === null): ?>
-                <a class="button-secondary" href="<?= htmlspecialchars(app_path('/login?' . http_build_query(['return_to' => $searchReturnTo])), ENT_QUOTES, 'UTF-8'); ?>">Me connecter</a>
-            <?php else: ?>
-                <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                    <button type="submit" class="button-secondary">Me deconnecter</button>
-                </form>
-            <?php endif; ?>
         </nav>
 
         <section class="hero">
             <div class="hero-copy">
                 <p class="eyebrow">Recherche eleve</p>
-                <h1 class="hero-title">Cherche un stage pres de toi ou dans un domaine qui t'attire.</h1>
-                <p class="hero-text">Tu peux filtrer par secteur, utiliser ta position pour voir les offres proches et ouvrir chaque fiche avant de candidater.</p>
+                <h1 class="hero-title">Trouve une offre qui te parle, puis ouvre sa fiche tranquillement.</h1>
+                <p class="hero-text">Commence par un mot-cle ou un secteur. La position est optionnelle et sert seulement a faire remonter les offres proches.</p>
+                <div class="step-chip-row">
+                    <span class="step-chip">1. Je cherche</span>
+                    <span class="step-chip">2. Je compare</span>
+                    <span class="step-chip">3. Je candidate</span>
+                </div>
             </div>
         </section>
 
@@ -96,7 +107,7 @@ $searchReturnTo = '/search' . ($keyword !== '' || $selectedTag !== '' || $origin
                 </p>
 
                 <details class="manual-panel">
-                    <summary>Je saisis mes coordonnees moi-meme</summary>
+                    <summary>Je prefere entrer ma position moi-meme</summary>
                     <div class="field-grid">
                         <div class="field-group">
                             <label for="origin_lat">Latitude</label>
@@ -143,8 +154,8 @@ $searchReturnTo = '/search' . ($keyword !== '' || $selectedTag !== '' || $origin
                 </fieldset>
 
                 <div class="inline-actions">
-                    <button type="submit">Afficher les offres</button>
-                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/offers'), ENT_QUOTES, 'UTF-8'); ?>">Voir toutes les offres actives</a>
+                    <button type="submit">Lancer la recherche</button>
+                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/offers'), ENT_QUOTES, 'UTF-8'); ?>">Voir sans filtre</a>
                 </div>
             </form>
         </section>
@@ -152,7 +163,7 @@ $searchReturnTo = '/search' . ($keyword !== '' || $selectedTag !== '' || $origin
         <section class="results-header">
             <div>
                 <p class="eyebrow">Resultats</p>
-                <h2 class="section-title"><?= htmlspecialchars((string) $resultsCount, ENT_QUOTES, 'UTF-8'); ?> offre(s) a explorer</h2>
+                <h2 class="section-title"><?= htmlspecialchars((string) $resultsCount, ENT_QUOTES, 'UTF-8'); ?> offre(s) trouvee(s)</h2>
             </div>
             <?php if ($locationReady): ?>
                 <span class="status-pill">Tri par distance active</span>
@@ -188,7 +199,7 @@ $searchReturnTo = '/search' . ($keyword !== '' || $selectedTag !== '' || $origin
                             </li>
                         </ul>
                         <div class="inline-actions">
-                            <a class="button" href="<?= htmlspecialchars(app_path('/offers/' . (string) $item['id']), ENT_QUOTES, 'UTF-8'); ?>?origin_lat=<?= htmlspecialchars($originLat, ENT_QUOTES, 'UTF-8'); ?>&origin_lng=<?= htmlspecialchars($originLng, ENT_QUOTES, 'UTF-8'); ?>">Voir l'offre</a>
+                            <a class="button" href="<?= htmlspecialchars(app_path('/offers/' . (string) $item['id']), ENT_QUOTES, 'UTF-8'); ?>?origin_lat=<?= htmlspecialchars($originLat, ENT_QUOTES, 'UTF-8'); ?>&origin_lng=<?= htmlspecialchars($originLng, ENT_QUOTES, 'UTF-8'); ?>">Lire la fiche</a>
                         </div>
                     </article>
                 <?php endforeach; ?>

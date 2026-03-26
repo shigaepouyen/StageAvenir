@@ -29,22 +29,28 @@ $currentOfferReturnTo = '/offers/' . (string) (($internship['id'] ?? $_GET['id']
 <body class="page-detail">
     <main class="page-shell">
         <nav class="top-nav surface">
-            <div class="nav-links">
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Recherche</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
-                <?php if (($currentUser['role'] ?? '') === 'student'): ?>
-                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
+            <div class="nav-cluster">
+                <a class="nav-brand" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Avenir Pro</a>
+                <div class="nav-links">
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/search'), ENT_QUOTES, 'UTF-8'); ?>">Trouver un stage</a>
+                    <?php if (($currentUser['role'] ?? '') === 'student'): ?>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/my-applications'), ENT_QUOTES, 'UTF-8'); ?>">Mes candidatures</a>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
+                    <?php endif; ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <?php if ($currentUser === null): ?>
+                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/login?' . http_build_query(['return_to' => $currentOfferReturnTo])), ENT_QUOTES, 'UTF-8'); ?>">Connexion eleve</a>
+                <?php else: ?>
+                    <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                        <button type="submit" class="button-secondary">Me deconnecter</button>
+                    </form>
                 <?php endif; ?>
             </div>
-            <?php if ($currentUser === null): ?>
-                <a class="button-secondary" href="<?= htmlspecialchars(app_path('/login?' . http_build_query(['return_to' => $currentOfferReturnTo])), ENT_QUOTES, 'UTF-8'); ?>">Me connecter</a>
-            <?php else: ?>
-                <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                    <button type="submit" class="button-secondary">Me deconnecter</button>
-                </form>
-            <?php endif; ?>
         </nav>
 
         <?php if (!isset($internship) || $internship === null): ?>
@@ -57,7 +63,7 @@ $currentOfferReturnTo = '/offers/' . (string) (($internship['id'] ?? $_GET['id']
                 <div class="hero-copy">
                     <p class="eyebrow">Offre de stage</p>
                     <h1 class="hero-title"><?= htmlspecialchars((string) $internship['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
-                    <p class="hero-text">Lis tranquillement la fiche, verifie le lieu et les places disponibles, puis candidate quand tu te sens pret.</p>
+                    <p class="hero-text">Lis la fiche, regarde le lieu et les places disponibles, puis candidate seulement si l'offre te correspond vraiment.</p>
                     <div class="offer-card-top">
                         <span class="stat-badge"><?= htmlspecialchars((string) $internship['places_count'], ENT_QUOTES, 'UTF-8'); ?> place(s)</span>
                         <span class="stat-badge stat-badge-soft"><?= htmlspecialchars((string) ($internship['sector_tag'] ?? 'Secteur non precise'), ENT_QUOTES, 'UTF-8'); ?></span>
@@ -121,9 +127,9 @@ $currentOfferReturnTo = '/offers/' . (string) (($internship['id'] ?? $_GET['id']
 
                         <?php if (!isset($currentUser) || $currentUser === null): ?>
                             <div class="inline-actions">
-                                <a class="button" href="<?= htmlspecialchars(app_path('/login?' . http_build_query(['return_to' => $currentOfferReturnTo])), ENT_QUOTES, 'UTF-8'); ?>">Me connecter pour candidater</a>
+                                <a class="button" href="<?= htmlspecialchars(app_path('/login?' . http_build_query(['return_to' => $currentOfferReturnTo])), ENT_QUOTES, 'UTF-8'); ?>">Recevoir mon lien pour candidater</a>
                             </div>
-                            <p class="student-note">Tu pourras revenir ici juste apres la connexion.</p>
+                            <p class="student-note">Tu reviendras directement sur cette fiche juste apres la connexion.</p>
                         <?php elseif (($currentUser['role'] ?? '') !== 'student'): ?>
                             <div class="empty-state">La candidature est reservee aux eleves.</div>
                         <?php else: ?>

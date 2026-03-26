@@ -7,6 +7,6 @@ use App\Support\Env;
 Env::load(__DIR__ . '/../.env.local');
 
 return [
-    'month' => (int) (getenv('NETTOYAGE_MONTH') ?: '7'),
-    'day' => (int) (getenv('NETTOYAGE_DAY') ?: '15'),
+    'month' => (int) Env::get('NETTOYAGE_MONTH', '7'),
+    'day' => (int) Env::get('NETTOYAGE_DAY', '15'),
 ];

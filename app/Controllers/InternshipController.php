@@ -39,6 +39,10 @@ final class InternshipController
         'approved' => 'Validee',
         'rejected' => 'Refusee',
     ];
+    private const MANAGED_STAFF_ROLE_LABELS = [
+        'teacher' => 'Professeur principal',
+        'level_manager' => 'Responsable de niveau',
+    ];
 
     private PDO $pdo;
     private CompanyRepository $companies;
@@ -864,6 +868,148 @@ final class InternshipController
         require __DIR__ . '/../Views/admin_dashboard.php';
     }
 
+    public function adminStaff(): void
+    {
+        [$title, $error, $success, $accessDenied] = $this->guardAdmin();
+        $title = 'Comptes professeurs et responsables';
+        $availableClasses = $this->users->findDistinctStudentClasses();
+        $availableStaffRoles = self::MANAGED_STAFF_ROLE_LABELS;
+        $staffItems = [];
+        $createFormData = $this->defaultManagedStaffFormData();
+        $editingStaffId = null;
+        $editingFormData = null;
+
+        if ($accessDenied) {
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $staffItems = $this->users->findAllManagedStaffAccounts();
+
+        if (($_GET['status'] ?? null) === 'created') {
+            $success = 'Le compte staff a ete cree. La personne peut maintenant se connecter avec son Magic Link.';
+        }
+
+        if (($_GET['status'] ?? null) === 'updated') {
+            $success = 'Le compte staff a ete mis a jour.';
+        }
+
+        require __DIR__ . '/../Views/admin_staff.php';
+    }
+
+    public function createManagedStaff(): void
+    {
+        [$title, $error, $success, $accessDenied] = $this->guardAdmin();
+        $title = 'Comptes professeurs et responsables';
+        $availableClasses = $this->users->findDistinctStudentClasses();
+        $availableStaffRoles = self::MANAGED_STAFF_ROLE_LABELS;
+        $staffItems = [];
+        $createFormData = $this->managedStaffFormDataFromPost();
+        $editingStaffId = null;
+        $editingFormData = null;
+
+        if ($accessDenied) {
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $staffItems = $this->users->findAllManagedStaffAccounts();
+        $validationError = $this->validateManagedStaffFormData($createFormData);
+
+        if ($validationError !== null) {
+            http_response_code(422);
+            $error = $validationError;
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $email = strtolower(trim((string) $createFormData['email']));
+        $existingUser = $this->users->findByEmail($email);
+
+        if ($existingUser !== null) {
+            $existingRole = (string) ($existingUser['role'] ?? '');
+
+            if (isset(self::MANAGED_STAFF_ROLE_LABELS[$existingRole])) {
+                http_response_code(409);
+                $error = 'Cette adresse email existe deja comme compte staff. Modifiez-la directement dans la liste ci-dessous.';
+            } else {
+                http_response_code(409);
+                $error = 'Cette adresse email est deja utilisee par un autre type de compte. Choisissez une autre adresse dediee au staff.';
+            }
+
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $this->users->createManagedStaffAccount(
+            $email,
+            (string) $createFormData['role'],
+            (string) $createFormData['first_name'],
+            (string) $createFormData['last_name'],
+            (string) $createFormData['managed_class']
+        );
+
+        app_redirect('/admin/staff?status=created');
+    }
+
+    public function updateManagedStaff(string $id): void
+    {
+        [$title, $error, $success, $accessDenied] = $this->guardAdmin();
+        $title = 'Comptes professeurs et responsables';
+        $availableClasses = $this->users->findDistinctStudentClasses();
+        $availableStaffRoles = self::MANAGED_STAFF_ROLE_LABELS;
+        $staffItems = [];
+        $createFormData = $this->defaultManagedStaffFormData();
+        $editingStaffId = (int) $id;
+        $editingFormData = $this->managedStaffFormDataFromPost();
+
+        if ($accessDenied) {
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $staffItems = $this->users->findAllManagedStaffAccounts();
+        $staffUser = $this->users->findById($editingStaffId);
+
+        if ($staffUser === null || !isset(self::MANAGED_STAFF_ROLE_LABELS[(string) ($staffUser['role'] ?? '')])) {
+            http_response_code(404);
+            $error = 'Compte staff introuvable.';
+            $editingStaffId = null;
+            $editingFormData = null;
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $validationError = $this->validateManagedStaffFormData($editingFormData);
+
+        if ($validationError !== null) {
+            http_response_code(422);
+            $error = $validationError;
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $email = strtolower(trim((string) $editingFormData['email']));
+
+        if ($this->users->isEmailUsedByAnotherUser($email, $editingStaffId)) {
+            http_response_code(409);
+            $error = 'Cette adresse email est deja utilisee par un autre compte.';
+            require __DIR__ . '/../Views/admin_staff.php';
+            return;
+        }
+
+        $this->users->updateManagedStaffAccountById(
+            $editingStaffId,
+            $email,
+            (string) $editingFormData['role'],
+            (string) $editingFormData['first_name'],
+            (string) $editingFormData['last_name'],
+            (string) $editingFormData['managed_class']
+        );
+
+        app_redirect('/admin/staff?status=updated');
+    }
+
     public function exportAdminDashboardCsv(): void
     {
         [$title, $error, $success, $accessDenied, $canManageInternshipAdministration, $scopeClass] = $this->guardCollegeDashboard();
@@ -1248,6 +1394,28 @@ final class InternshipController
         ];
     }
 
+    private function defaultManagedStaffFormData(): array
+    {
+        return [
+            'email' => '',
+            'first_name' => '',
+            'last_name' => '',
+            'role' => 'teacher',
+            'managed_class' => '',
+        ];
+    }
+
+    private function managedStaffFormDataFromPost(): array
+    {
+        return [
+            'email' => trim((string) ($_POST['email'] ?? '')),
+            'first_name' => trim((string) ($_POST['first_name'] ?? '')),
+            'last_name' => trim((string) ($_POST['last_name'] ?? '')),
+            'role' => trim((string) ($_POST['role'] ?? 'teacher')),
+            'managed_class' => trim((string) ($_POST['managed_class'] ?? '')),
+        ];
+    }
+
     private function guardAdmin(): array
     {
         $user = SessionManager::currentUser();
@@ -1393,6 +1561,33 @@ final class InternshipController
         return null;
     }
 
+    private function validateManagedStaffFormData(array $formData): ?string
+    {
+        $email = trim((string) ($formData['email'] ?? ''));
+        $role = trim((string) ($formData['role'] ?? ''));
+        $firstName = trim((string) ($formData['first_name'] ?? ''));
+        $lastName = trim((string) ($formData['last_name'] ?? ''));
+        $managedClass = trim((string) ($formData['managed_class'] ?? ''));
+
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return 'Veuillez saisir une adresse email staff valide.';
+        }
+
+        if (!isset(self::MANAGED_STAFF_ROLE_LABELS[$role])) {
+            return 'Le role staff demande est invalide.';
+        }
+
+        if ($firstName === '' || $lastName === '') {
+            return 'Le prenom et le nom sont obligatoires pour les comptes staff.';
+        }
+
+        if ($role === 'teacher' && $managedClass === '') {
+            return 'Une classe doit etre renseignee pour un compte professeur.';
+        }
+
+        return null;
+    }
+
     public static function sectorTags(): array
     {
         return self::SECTOR_TAGS;
@@ -1406,6 +1601,11 @@ final class InternshipController
     public static function validationStatusLabels(): array
     {
         return self::VALIDATION_STATUS_LABELS;
+    }
+
+    public static function managedStaffRoleLabels(): array
+    {
+        return self::MANAGED_STAFF_ROLE_LABELS;
     }
 
     private function validateEntityFilter(string $selectedId, array $rows): ?int

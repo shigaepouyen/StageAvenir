@@ -37,18 +37,25 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
 <body class="page-admin">
     <main class="page-shell">
         <nav class="top-nav surface">
-            <div class="nav-links">
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
-                <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/admin/dashboard'), ENT_QUOTES, 'UTF-8'); ?>">Tableau college</a>
-                <?php if ($canManageInternshipAdministration): ?>
-                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/admin/internships'), ENT_QUOTES, 'UTF-8'); ?>">Moderation</a>
-                <?php endif; ?>
+            <div class="nav-cluster">
+                <a class="nav-brand" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Avenir Pro</a>
+                <div class="nav-links">
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Tableau de bord</a>
+                    <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/admin/dashboard'), ENT_QUOTES, 'UTF-8'); ?>">Suivi college</a>
+                    <?php if ($canManageInternshipAdministration): ?>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/admin/staff'), ENT_QUOTES, 'UTF-8'); ?>">Comptes staff</a>
+                        <a class="nav-link" href="<?= htmlspecialchars(app_path('/admin/internships'), ENT_QUOTES, 'UTF-8'); ?>">Moderation</a>
+                    <?php endif; ?>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+                </div>
             </div>
-            <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                <button type="submit" class="button-secondary">Me deconnecter</button>
-            </form>
+            <div class="nav-actions">
+                <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                    <button type="submit" class="button-secondary">Me deconnecter</button>
+                </form>
+            </div>
         </nav>
 
         <section class="hero hero-split" style="margin-top: 1rem;">
@@ -56,6 +63,11 @@ $exportUrl = app_path('/admin/dashboard/export?' . http_build_query([
                 <p class="eyebrow">Suivi referent</p>
                 <h1 class="hero-title"><?= htmlspecialchars($title ?? 'Tableau de bord college', ENT_QUOTES, 'UTF-8'); ?></h1>
                 <p class="hero-text">Suivi global des candidatures, des offres ouvertes et des points d'attention de la campagne de stage.</p>
+                <div class="step-chip-row">
+                    <span class="step-chip">Je filtre</span>
+                    <span class="step-chip">Je repere les alertes</span>
+                    <span class="step-chip">J'exporte si besoin</span>
+                </div>
             </div>
             <aside class="hero-panel">
                 <p class="eyebrow">Export</p>

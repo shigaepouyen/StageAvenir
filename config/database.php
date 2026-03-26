@@ -6,11 +6,11 @@ use App\Support\Env;
 
 Env::load(__DIR__ . '/../.env.local');
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$port = getenv('DB_PORT') ?: '3306';
-$database = getenv('DB_NAME') ?: 'avenir_pro';
-$username = getenv('DB_USER') ?: 'root';
-$password = getenv('DB_PASS') ?: '';
+$host = Env::get('DB_HOST', '127.0.0.1');
+$port = Env::get('DB_PORT', '3306');
+$database = Env::get('DB_NAME', 'avenir_pro');
+$username = Env::get('DB_USER', 'root');
+$password = Env::get('DB_PASS');
 
 $dsn = sprintf(
     'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',

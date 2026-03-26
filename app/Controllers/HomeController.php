@@ -40,6 +40,7 @@ final class HomeController
         $canManageInternships = $canManageCompanyProfile;
         $canAccessCollegeDashboard = $user !== null && in_array(($user['role'] ?? ''), ['admin', 'teacher', 'level_manager'], true);
         $canAccessAdminInternships = $user !== null && ($user['role'] ?? '') === 'admin';
+        $canManageStaffAccounts = $user !== null && ($user['role'] ?? '') === 'admin';
         $newApplicationsCount = 0;
         $unreadNotificationsCount = 0;
 
@@ -60,8 +61,12 @@ final class HomeController
 
     public function studentHelp(): void
     {
-        $title = 'Aide eleve';
         $user = SessionManager::currentUser();
+        $title = match ($user['role'] ?? null) {
+            'company', 'parent' => 'Aide entreprise',
+            'teacher', 'level_manager', 'admin' => 'Aide equipe educative',
+            default => 'Aide et FAQ',
+        };
 
         require __DIR__ . '/../Views/student_help.php';
     }

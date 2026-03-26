@@ -33,6 +33,22 @@ Base initiale de l'application web Avenir Pro en PHP 8.1+ avec MariaDB et Flight
 - Le token expire au bout de 20 minutes par defaut.
 - Un rate limiting simple limite les demandes par email et par IP.
 - La session PHP est configuree avec cookies `HttpOnly` et `Secure` pour 30 jours.
+- Les comptes `admin`, `teacher` et `level_manager` se connectent eux aussi par Magic Link, sans mot de passe.
+- Un compte `admin` n'est jamais auto-cree par le formulaire de connexion. Il doit exister au prealable dans `users`.
+
+## Roles et espaces
+- `student` : recherche des offres, candidature, discussion interne, consultation des news.
+- `company` / `parent` : profil entreprise, soumission d'offres, suivi des candidatures recues, discussion interne avec les eleves.
+- `teacher` : acces au tableau college limite a la classe rattachee dans `managed_class`.
+- `level_manager` : acces au tableau college sur l'ensemble du niveau.
+- `admin` : acces au tableau college, a la moderation des entreprises et offres, et a la gestion des comptes staff.
+
+## Gestion staff
+- `/admin/staff` permet a un `admin` de creer et mettre a jour les comptes `teacher` et `level_manager`.
+- Un compte `teacher` doit avoir une `managed_class`.
+- Un compte `level_manager` voit tout le tableau college et n'utilise pas `managed_class`.
+- Les comptes staff se connectent ensuite via `/login` avec leur email et un Magic Link.
+- L'application bloque la creation d'un compte staff si l'email est deja utilise par un autre type de compte.
 
 ## Profil entreprise
 - `/company-profile` permet a un compte `parent`, `company` ou `admin` d'enregistrer son SIRET.
@@ -67,6 +83,7 @@ Base initiale de l'application web Avenir Pro en PHP 8.1+ avec MariaDB et Flight
 - `/admin/dashboard` fournit un tableau de bord college avec filtres, alertes simples et export CSV des candidatures.
 - `/admin/dashboard` fournit aussi un annuaire interne des eleves par classe avec recherche par prenom ou nom, sans afficher leurs adresses email.
 - Le role `teacher` est limite a sa classe (`managed_class`), tandis que le role `level_manager` peut suivre l'ensemble des eleves du niveau.
+- `/admin/staff` permet a l'admin de gerer les comptes professeurs principaux et responsables de niveau sans passer par SQL.
 
 ## Referentiel ONISEP
 - `ref_jobs` stocke un referentiel local des metiers ONISEP.

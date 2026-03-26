@@ -337,6 +337,7 @@ final class InternshipRepository
                 companies.validation_status AS company_validation_status
              FROM internships
              INNER JOIN companies ON companies.id = internships.company_id
+             WHERE internships.validation_status <> \'approved\'
              ORDER BY
                 CASE internships.validation_status
                     WHEN \'pending\' THEN 1

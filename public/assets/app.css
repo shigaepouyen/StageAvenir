@@ -403,6 +403,58 @@ select:focus {
     gap: 1rem;
 }
 
+.top-nav {
+    position: relative;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    background: rgba(255, 253, 248, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 16px 38px rgba(25, 52, 65, 0.08);
+}
+
+.nav-cluster,
+.nav-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nav-cluster {
+    flex: 1 1 540px;
+}
+
+.nav-actions {
+    justify-content: flex-end;
+}
+
+.nav-brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.65rem 1rem;
+    border-radius: 999px;
+    background: rgba(25, 52, 65, 0.05);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+}
+
+.nav-brand-subtle {
+    background: transparent;
+    padding-left: 0;
+}
+
+.top-nav::after {
+    content: "";
+    position: absolute;
+    inset: auto 1.5rem -0.9rem 1.5rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(25, 52, 65, 0.12), transparent);
+    pointer-events: none;
+}
+
 .nav-links {
     display: flex;
     flex-wrap: wrap;
@@ -423,6 +475,10 @@ select:focus {
 .nav-link-current {
     color: var(--secondary);
     background: var(--secondary-soft);
+}
+
+.nav-link-muted {
+    color: var(--text-soft);
 }
 
 .count-badge {
@@ -636,6 +692,125 @@ select:focus {
     font-weight: 700;
 }
 
+.journey-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.journey-panel {
+    padding: 1.2rem;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(25, 52, 65, 0.08);
+    box-shadow: 0 18px 30px rgba(25, 52, 65, 0.06);
+}
+
+.journey-panel h3,
+.journey-panel h2 {
+    margin: 0 0 0.45rem;
+}
+
+.journey-panel p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.55;
+}
+
+.journey-panel .inline-actions {
+    margin-top: 1rem;
+}
+
+.process-list {
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.process-list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    align-items: start;
+    color: var(--text-soft);
+    line-height: 1.55;
+}
+
+.process-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: rgba(40, 114, 113, 0.12);
+    color: var(--secondary);
+    font-weight: 900;
+}
+
+.support-banner {
+    display: grid;
+    gap: 1rem;
+    padding: 1.2rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(40, 114, 113, 0.08), rgba(255, 255, 255, 0.88));
+    border: 1px solid rgba(40, 114, 113, 0.12);
+}
+
+.support-banner h2,
+.support-banner h3 {
+    margin: 0;
+}
+
+.support-banner p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.55;
+}
+
+.faq-columns {
+    display: grid;
+    gap: 1rem;
+}
+
+.faq-group {
+    padding: 1.1rem;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(25, 52, 65, 0.08);
+}
+
+.faq-group h3 {
+    margin: 0 0 0.35rem;
+}
+
+.faq-group p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.55;
+}
+
+.step-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+
+.step-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 0.95rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid rgba(25, 52, 65, 0.08);
+    color: var(--text);
+    font-weight: 700;
+}
+
 @media (min-width: 760px) {
     .hero-split {
         grid-template-columns: 1.4fr 0.95fr;
@@ -655,6 +830,11 @@ select:focus {
     .detail-layout {
         grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
         align-items: start;
+    }
+
+    .journey-grid,
+    .faq-columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .page-shell {

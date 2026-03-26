@@ -12,7 +12,7 @@ final class ApplicationMailer
     public function __construct(private array $mailConfig)
     {
         $this->transport = new MailTransport($mailConfig);
-        $this->appUrl = rtrim((string) ($_ENV['APP_URL'] ?? getenv('APP_URL') ?: ''), '/');
+        $this->appUrl = rtrim(Env::get('APP_URL'), '/');
     }
 
     public function sendNewApplicationNotification(

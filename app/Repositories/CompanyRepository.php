@@ -143,6 +143,7 @@ final class CompanyRepository
                 users.email AS owner_email
              FROM companies
              INNER JOIN users ON users.id = companies.user_id
+             WHERE companies.validation_status <> \'approved\'
              ORDER BY
                 CASE companies.validation_status
                     WHEN \'pending\' THEN 1

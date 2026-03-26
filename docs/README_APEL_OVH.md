@@ -32,6 +32,7 @@ Si vous mettez a jour une base deja existante, importez aussi :
 - `scripts/sql/step15_hardening.sql`
 - `scripts/sql/step18_company_applications.sql`
 - `scripts/sql/step20_security_moderation_messaging.sql`
+- `scripts/sql/step21_notifications.sql`
 
 ## 3. Configuration
 Copiez `.env.example` vers `.env.local`, puis adaptez au minimum :
@@ -39,6 +40,11 @@ Copiez `.env.example` vers `.env.local`, puis adaptez au minimum :
 - `APP_URL`
 - `MAIL_FROM`
 - `MAIL_FROM_NAME`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_ENCRYPTION`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
 - `DB_HOST`
 - `DB_PORT`
 - `DB_NAME`
@@ -52,6 +58,26 @@ Exemple si l'application est servie dans un sous-repertoire OVH :
 Sur OVH, placez `.env.local` au meme niveau que `index.php`, donc par exemple :
 
 - `www/StageAvenir/.env.local`
+
+Exemple de configuration SMTP Google Workspace :
+
+```env
+MAIL_FROM=contact@votre-domaine.fr
+MAIL_FROM_NAME=APEL - Stage Avenir
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_ENCRYPTION=ssl
+SMTP_USERNAME=contact@votre-domaine.fr
+SMTP_PASSWORD=mot-de-passe-application-google
+SMTP_FROM_EMAIL=contact@votre-domaine.fr
+SMTP_FROM_NAME=APEL - Stage Avenir
+SMTP_TIMEOUT_SECONDS=15
+```
+
+Important :
+- utilisez un mot de passe d'application Google, pas le mot de passe habituel du compte
+- laissez `.env.local` hors du depot git
+- en cas de doute sur l'envoi des emails, utilisez temporairement `mail_diagnostic.php`, puis supprimez-le du serveur
 
 ## 4. Dependances PHP
 Le projet utilise FlightPHP via Composer. Il faut donc que le dossier `vendor/` soit present sur l'hebergement.
@@ -97,19 +123,51 @@ Exemples de scripts :
 - echappement HTML avec `htmlspecialchars`
 - protection CSRF sur tous les formulaires POST
 - session PHP avec cookie `HttpOnly`
+- aucune diffusion de l'email eleve vers l'entreprise
+- discussions eleve/entreprise uniquement dans la webapp
+- alertes email volontairement neutres, avec lecture detaillee apres connexion
 
-## 8. Verification apres mise en ligne
+## 8. Premier compte admin
+
+Le formulaire `/login` ne cree jamais un compte `admin`.
+
+Il faut donc preparer le premier admin en base de donnees, par exemple dans phpMyAdmin :
+
+```sql
+INSERT INTO users (email, role, first_name, last_name, created_at)
+VALUES ('admin@votre-domaine.fr', 'admin', 'Admin', 'APEL', NOW());
+```
+
+Si le compte existe deja avec un autre role :
+
+```sql
+UPDATE users
+SET role = 'admin'
+WHERE email = 'admin@votre-domaine.fr';
+```
+
+Ensuite l'admin se connecte normalement sur `/login` avec son email, puis recoit un Magic Link.
+
+Une fois connecte, l'admin peut :
+- ouvrir `/admin/dashboard`
+- moderer les entreprises et offres sur `/admin/internships`
+- gerer les comptes professeurs et responsables de niveau sur `/admin/staff`
+
+## 9. Verification apres mise en ligne
 
 1. ouvrez la page d'accueil
 2. testez `/login`
 3. verifiez qu'un email Magic Link part bien
-4. verifiez qu'une entreprise peut creer une offre
-5. verifiez qu'une entreprise reste en attente de validation tant que l'admin n'a pas valide son profil
-6. verifiez qu'une offre nouvellement soumise reste en attente de validation avant publication
-7. verifiez qu'un eleve peut rechercher, candidater puis discuter dans la webapp sans diffusion de son email
-8. verifiez que l'admin peut ouvrir `/admin/dashboard` et exporter le CSV de suivi
-9. verifiez que le role professeur ne voit que sa classe et que le role responsable de niveau voit tout le niveau
-10. testez un script CRON manuellement une premiere fois
+4. verifiez qu'un admin peut se connecter puis ouvrir `/admin/staff`
+5. verifiez qu'un admin peut creer un compte professeur principal
+6. verifiez qu'un admin peut creer un compte responsable de niveau
+7. verifiez qu'une entreprise peut creer une offre
+8. verifiez qu'une entreprise reste en attente de validation tant que l'admin n'a pas valide son profil
+9. verifiez qu'une offre nouvellement soumise reste en attente de validation avant publication
+10. verifiez qu'un eleve peut rechercher, candidater puis discuter dans la webapp sans diffusion de son email
+11. verifiez que l'admin peut ouvrir `/admin/dashboard` et exporter le CSV de suivi
+12. verifiez que le role professeur ne voit que sa classe et que le role responsable de niveau voit tout le niveau
+13. testez un script CRON manuellement une premiere fois
 
-## 9. Point d'attention OVH
+## 10. Point d'attention OVH
 Le cookie de session est prevu pour un site en HTTPS. Il faut donc activer le certificat SSL sur le domaine avant usage normal.

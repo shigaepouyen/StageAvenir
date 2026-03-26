@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Support\Env;
+
 function app_base_path(): string
 {
     $basePath = '';
@@ -19,7 +21,7 @@ function app_base_path(): string
     }
 
     if ($basePath === '') {
-        $appUrl = getenv('APP_URL') ?: '';
+        $appUrl = Env::get('APP_URL');
         $parsedPath = $appUrl === '' ? '' : (parse_url($appUrl, PHP_URL_PATH) ?: '');
         $basePath = is_string($parsedPath) ? $parsedPath : '';
     }

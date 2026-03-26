@@ -8,6 +8,8 @@ use PDO;
 
 final class UserRepository
 {
+    private const MANAGED_STAFF_ROLES = ['teacher', 'level_manager'];
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -76,6 +78,93 @@ final class UserRepository
             'id' => $userId,
             'school_class' => trim($schoolClass),
         ]);
+    }
+
+    public function findAllManagedStaffAccounts(): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT id, email, role, first_name, last_name, managed_class, created_at
+             FROM users
+             WHERE role IN (\'teacher\', \'level_manager\')
+             ORDER BY
+                CASE role
+                    WHEN \'level_manager\' THEN 0
+                    WHEN \'teacher\' THEN 1
+                    ELSE 9
+                END ASC,
+                last_name ASC,
+                first_name ASC,
+                email ASC'
+        );
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    public function createManagedStaffAccount(
+        string $email,
+        string $role,
+        ?string $firstName = null,
+        ?string $lastName = null,
+        ?string $managedClass = null
+    ): int {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO users (email, role, first_name, last_name, school_class, managed_class, created_at)
+             VALUES (:email, :role, :first_name, :last_name, NULL, :managed_class, NOW())'
+        );
+        $statement->execute([
+            'email' => strtolower(trim($email)),
+            'role' => $this->normalizeManagedStaffRole($role),
+            'first_name' => $this->normalizeNullableString($firstName),
+            'last_name' => $this->normalizeNullableString($lastName),
+            'managed_class' => $this->normalizeManagedClass($role, $managedClass),
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function updateManagedStaffAccountById(
+        int $userId,
+        string $email,
+        string $role,
+        ?string $firstName = null,
+        ?string $lastName = null,
+        ?string $managedClass = null
+    ): void {
+        $statement = $this->pdo->prepare(
+            'UPDATE users
+             SET email = :email,
+                 role = :role,
+                 first_name = :first_name,
+                 last_name = :last_name,
+                 managed_class = :managed_class
+             WHERE id = :id
+               AND role IN (\'teacher\', \'level_manager\')'
+        );
+        $statement->execute([
+            'id' => $userId,
+            'email' => strtolower(trim($email)),
+            'role' => $this->normalizeManagedStaffRole($role),
+            'first_name' => $this->normalizeNullableString($firstName),
+            'last_name' => $this->normalizeNullableString($lastName),
+            'managed_class' => $this->normalizeManagedClass($role, $managedClass),
+        ]);
+    }
+
+    public function isEmailUsedByAnotherUser(string $email, ?int $excludedUserId = null): bool
+    {
+        $sql = 'SELECT COUNT(*) AS total FROM users WHERE email = :email';
+        $params = ['email' => strtolower(trim($email))];
+
+        if ($excludedUserId !== null) {
+            $sql .= ' AND id <> :excluded_id';
+            $params['excluded_id'] = $excludedUserId;
+        }
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn() > 0;
     }
 
     public function countStudentsWithoutApplications(?string $schoolClass = null, ?string $searchTerm = null): int
@@ -228,5 +317,25 @@ final class UserRepository
         $normalized = trim((string) $value);
 
         return $normalized === '' ? null : $normalized;
+    }
+
+    private function normalizeManagedStaffRole(string $role): string
+    {
+        $normalized = trim($role);
+
+        if (!in_array($normalized, self::MANAGED_STAFF_ROLES, true)) {
+            return 'teacher';
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeManagedClass(string $role, ?string $managedClass): ?string
+    {
+        if ($this->normalizeManagedStaffRole($role) !== 'teacher') {
+            return null;
+        }
+
+        return $this->normalizeNullableString($managedClass);
     }
 }

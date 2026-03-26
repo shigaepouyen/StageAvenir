@@ -19,34 +19,45 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
 <body class="page-company">
     <main class="page-shell">
         <nav class="top-nav surface">
-            <div class="nav-links">
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Accueil</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">Profil entreprise</a>
-                <a class="nav-link" href="<?= htmlspecialchars(app_path('/internships'), ENT_QUOTES, 'UTF-8'); ?>">Mes offres</a>
-                <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/company-applications'), ENT_QUOTES, 'UTF-8'); ?>">
-                    Candidatures
-                    <?php if ($newApplicationsCount > 0): ?>
-                        <span class="count-badge"><?= htmlspecialchars((string) $newApplicationsCount, ENT_QUOTES, 'UTF-8'); ?></span>
-                    <?php endif; ?>
-                </a>
+            <div class="nav-cluster">
+                <a class="nav-brand" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Avenir Pro</a>
+                <div class="nav-links">
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/'), ENT_QUOTES, 'UTF-8'); ?>">Tableau de bord</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/company-profile'), ENT_QUOTES, 'UTF-8'); ?>">Mon entreprise</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/internships'), ENT_QUOTES, 'UTF-8'); ?>">Mes offres</a>
+                    <a class="nav-link nav-link-current" href="<?= htmlspecialchars(app_path('/company-applications'), ENT_QUOTES, 'UTF-8'); ?>">
+                        Candidatures
+                        <?php if ($newApplicationsCount > 0): ?>
+                            <span class="count-badge"><?= htmlspecialchars((string) $newApplicationsCount, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Aide</a>
+                    <a class="nav-link" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Mes news</a>
+                </div>
             </div>
-            <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                <button type="submit" class="button-secondary">Me deconnecter</button>
-            </form>
+            <div class="nav-actions">
+                <form class="inline-form" method="post" action="<?= htmlspecialchars(app_path('/logout'), ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Support\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                    <button type="submit" class="button-secondary">Me deconnecter</button>
+                </form>
+            </div>
         </nav>
 
         <section class="hero hero-split" style="margin-top: 1rem;">
             <div class="hero-copy">
-                <p class="eyebrow">Suivi entreprise</p>
+                <p class="eyebrow">Etape 3</p>
                 <h1 class="hero-title"><?= htmlspecialchars($title ?? 'Candidatures recues', ENT_QUOTES, 'UTF-8'); ?></h1>
-                <p class="hero-text">Retrouve ici toutes les candidatures envoyees sur tes offres, filtre-les, mets a jour leur statut et reponds uniquement dans la discussion integree.</p>
+                <p class="hero-text">Lisez les candidatures, mettez a jour leur statut et poursuivez les echanges uniquement dans la discussion integree.</p>
+                <div class="step-chip-row">
+                    <span class="step-chip">Je lis</span>
+                    <span class="step-chip">Je choisis un statut</span>
+                    <span class="step-chip">Je reponds dans la discussion</span>
+                </div>
             </div>
             <aside class="hero-panel">
                 <p class="eyebrow">Nouvelles candidatures</p>
                 <p class="hero-title" style="font-size: clamp(2rem, 4vw, 3.4rem);"><?= htmlspecialchars((string) $newApplicationsCount, ENT_QUOTES, 'UTF-8'); ?></p>
-                <p class="section-copy">Les candidatures en statut <strong>Nouvelle</strong> meritent en principe une premiere lecture ou un premier contact.</p>
+                <p class="section-copy">Commencez par les candidatures en statut <strong>Nouvelle</strong>, puis utilisez la discussion pour poursuivre l'echange.</p>
             </aside>
         </section>
 
@@ -94,6 +105,7 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                     <div class="inline-actions">
                         <button type="submit">Appliquer les filtres</button>
                         <a class="button-secondary" href="<?= htmlspecialchars(app_path('/company-applications'), ENT_QUOTES, 'UTF-8'); ?>">Reinitialiser</a>
+                        <a class="button-ghost" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">FAQ entreprise</a>
                     </div>
                 </form>
             </section>
@@ -150,12 +162,21 @@ $newApplicationsCount = (int) ($newApplicationsCount ?? 0);
                                 </div>
                                 <div class="inline-actions">
                                     <button type="submit">Enregistrer</button>
-                                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/offers/' . (string) $item['internship_id']), ENT_QUOTES, 'UTF-8'); ?>">Voir l'offre</a>
+                                    <a class="button-secondary" href="<?= htmlspecialchars(app_path('/offers/' . (string) $item['internship_id']), ENT_QUOTES, 'UTF-8'); ?>">Relire l'offre</a>
                                     <a class="button-secondary" href="<?= htmlspecialchars(app_path('/applications/' . (string) $item['id']), ENT_QUOTES, 'UTF-8'); ?>">Discussion</a>
                                 </div>
                             </form>
                         </article>
                     <?php endforeach; ?>
+                </section>
+
+                <section class="support-banner" style="margin-top: 1.5rem;">
+                    <h2>Important pour les mineurs</h2>
+                    <p>Les echanges doivent rester dans Avenir Pro. Les alertes email servent seulement a prevenir qu'une nouveaute vous attend dans l'espace connecte.</p>
+                    <div class="inline-actions">
+                        <a class="button-secondary" href="<?= htmlspecialchars(app_path('/help'), ENT_QUOTES, 'UTF-8'); ?>">Relire les regles</a>
+                        <a class="button-ghost" href="<?= htmlspecialchars(app_path('/news'), ENT_QUOTES, 'UTF-8'); ?>">Voir mes news</a>
+                    </div>
                 </section>
             <?php endif; ?>
         <?php endif; ?>

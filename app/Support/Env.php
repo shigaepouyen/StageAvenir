@@ -38,4 +38,29 @@ final class Env
             $_SERVER[$name] = $value;
         }
     }
+
+    public static function get(string $name, ?string $default = null): string
+    {
+        $localValue = getenv($name, true);
+
+        if ($localValue !== false && $localValue !== '') {
+            return (string) $localValue;
+        }
+
+        if (array_key_exists($name, $_ENV) && $_ENV[$name] !== '') {
+            return (string) $_ENV[$name];
+        }
+
+        if (array_key_exists($name, $_SERVER) && $_SERVER[$name] !== '') {
+            return (string) $_SERVER[$name];
+        }
+
+        $globalValue = getenv($name);
+
+        if ($globalValue !== false && $globalValue !== '') {
+            return (string) $globalValue;
+        }
+
+        return $default ?? '';
+    }
 }
